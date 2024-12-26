@@ -121,21 +121,21 @@ async def on_message(message):
             await message.channel.send('Put in a choice (rock, paper, scissor) you fucking idiot')
 
 
-    if dice and message.author.id != bot.user.id:
-        try:
+    if dice == True and message.author.id != bot.user.id:
+        if message.content.isdigit():
             userDiceNum = int(message.content)
             diceNumber = random.randint(1, 6)
 
             if userDiceNum != diceNumber:
                 await message.channel.send(f'nuh uh WRRRROOOOOOOOOOOOOOOOONG it was {diceNumber} IDIOT')
+                dice = False
             else:
                 await message.channel.send('You got it!!!! HAAA!')
+                dice = False
 
+        else:
+            await message.channel.send('NUMBER IDIOTTTTTTTTTTAAAAAA SHHHHHHHHH!!!')
             dice = False
-        
-        except ValueError:
-            await message.channel.send('Please do a number you idiot')
-
 
     await bot.process_commands(message)
 
@@ -200,9 +200,7 @@ async def slotMachine(interaction: discord.Interaction):
     )
     await interaction.response.send_message(response)
 
-# Blackjack
-
-user_tokens = 50
+#Blackjack
 
 
 cards = {'Ace' : 1, '2' : 2, '3' : 3, '4' : 4, '5': 5, '6' : 6, '7' : 7, '8' : 8, '9' : 9, '10' : 10, 'Jack' : 10, 'Queen' : 10, 'King' : 10}
@@ -258,8 +256,6 @@ def calculate_hand(hand):
 async def blackJack(ctx):
     player_hand = []
     dealer_hand = []
-    global user_tokens
-    user_tokens -= 5
 
     # Initial deal
     player_hand.append(deal_card(deck))
@@ -276,7 +272,7 @@ async def blackJack(ctx):
 
     
     while True:
-        await ctx.send('User tokens: ' + str(user_tokens) + '\nHit or Stand?')
+        await ctx.send('Hit or Stand?')
         msg = await bot.wait_for('message', check=check)
 
         if msg.content.lower() == 'hit':
@@ -302,15 +298,12 @@ async def blackJack(ctx):
 
     if dealer_total > 21:
         await ctx.send('you won fuck u')
-        user_tokens += 10
     elif player_total > dealer_total:
         await ctx.send('you won fuck u')
-        user_tokens += 10
     elif player_total < dealer_total:
         await ctx.send('LMFAOOOO I WON AHHAHAHAHAHA')
     else:
         await ctx.send('its a.. tie? idk get ur money back')
-        user_tokens += 5
 
     return
 
@@ -511,11 +504,20 @@ async def rps(ctx):
 
 @bot.command()
 async def dice(ctx):
-    global dice
     await ctx.send('Ill roll a 6 sided die. Guess the correct number or you get timed out.')
-    
+    global dice
     dice = True
     
+
+@bot.command()
+async def christmas(ctx):
+    await ctx.send(file=discord.File(r'C:/Users/lewis/Downloads/christmas.png')) 
+
+
+@bot.command()
+async def aero(ctx):
+    await ctx.send('Here are the aerodynamics of a pregnant man.')
+    await ctx.send(file=discord.File(r'C:/Users/lewis/Downloads/pregnantaero.png')) 
 
 
 bot.run(TOKEN)
