@@ -12,6 +12,7 @@ import time
 from datetime import datetime
 from quote import quote
 import csv
+import randfacts
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -142,7 +143,6 @@ async def on_message(message):
 
 
 
-## MANUAL COMMANDS / AUTOMATED COMMANDS #
 
 #lewisEffectOn
 @bot.tree.command(name='lewis-effect-on', description='Adds random words onto what you just said')
