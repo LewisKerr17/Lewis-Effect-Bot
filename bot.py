@@ -38,7 +38,7 @@ async def on_ready():
 
 # AUTO ADJECTIVE COMMAND / RANDOMBALL (8ball)
 
-adjectives = ["attractive", "bald", "beautiful", "chubby", "clean", "dazzling", "drab", "elegant", "fancy", "fit", "fat", "flabby", "glamorous", "gorgeous", "handsome", "magnificent", "muscular", "skinny", "plain", "plump", "scruffy", "rizzy", "stocky", "unkempt", "unsightly", "agreeable", "ambitious", "brave", "calm", "delightful", "eager", "faithful", "gentle", "happy","angry", "sad", "lively", "nice", "mean", "witty", "fuckin stupid", "clumsy", "fierce", "grumpy", "helpless", "itchy", "stroking", "lubed up", "big", "colossal", "gigantic", "great", "huge", "immense", "large", "little", "mammoth", "tiny", "gay", "straight", "gang", "on gang this is", "on my mother", "im so gay... also", "im gay", "i wanna fuck", "is this", "was this", "salad bacon cheese oh my god", "flumpy", "plumpy", "fraser reminds me of", "raph reminds me of", "donald reminds me of", "clunie reminds me of", "cookies", "i really want cookies but i just wanna say that", "yummers", "3.1415926535897932", "women are kinda like", "men are kinda like", "women", "r", "maybe", "i do not know the answer to your question however i do have to say", "eh", "meh", "neh", "nah", "yea", "duh", "mmmmmeh", "huh? i thought", "huh?", "huh", "https://www.youtube.com/watch?v=dQw4w9WgXcQ"]
+adjectives = ["attractive", "bald", "beautiful", "chubby", "clean", "dazzling", "drab", "elegant", "fancy", "fit", "fat", "flabby", "glamorous", "gorgeous", "handsome", "magnificent", "muscular", "skinny", "plain", "plump", "scruffy", "rizzy", "stocky", "unkempt", "unsightly", "agreeable", "ambitious", "brave", "calm", "delightful", "eager", "faithful", "gentle", "happy","angry", "sad", "lively", "nice", "mean", "witty", "fuckin stupid", "clumsy", "fierce", "grumpy", "helpless", "itchy", "stroking", "lubed up", "big", "colossal", "gigantic", "great", "huge", "immense", "large", "little", "mammoth", "tiny", "gay", "straight", "gang", "on gang this is", "on my mother", "im so zesty... also", "i wanna fuck", "is this", "was this", "salad bacon cheese oh my god", "flumpy", "plumpy", "fraser reminds me of", "raph reminds me of", "donald reminds me of", "clunie reminds me of", "cookies", "i really want cookies but i just wanna say that", "yummers", "3.1415926535897932", "women are kinda like", "men are kinda like", "women", "r", "maybe", "i do not know the answer to your question however i do have to say", "eh", "meh", "neh", "nah", "yea", "duh", "mmmmmeh", "huh? i thought", "huh?", "huh", "https://www.youtube.com/watch?v=dQw4w9WgXcQ"]
 
 effect = False
 question = False
@@ -52,7 +52,7 @@ rouletteOn = False
 rpsOn = False
 dice = False
 
-answers = ['yes', 'no', 'ask your mother', 'definitely', 'that is absolutely true', 'very no', 'absolutely not', 'not at all true', 'that is false', 'I do not care', 'this is not my business', 'and why is that my problem?', 'get raph to answer this idk', 'just because im an 8ball doesnt mean i can fix all of your problems', 'fuck you', 'why?', 'who?', 'how?', 'how does society accept this at all?', 'elon musk might have something to say about that', 'fuck off', 'gay', 'maybe ur just gay lol', 'come out already', 'this is so not right', 'nuh uh', 'yuh huh', 'perchance...']
+answers = ['yes', 'no', 'ask your mother', 'definitely', 'that is absolutely true', 'very no', 'absolutely not', 'not at all true', 'that is false', 'I do not care', 'this is not my business', 'and why is that my problem?', 'get raph to answer this idk', 'just because im an 8ball doesnt mean i can fix all of your problems', 'why?', 'who?', 'how?', 'how does society accept this at all?', 'elon musk might have something to say about that', 'come out already', 'this is so not right', 'nuh uh', 'yuh huh', 'perchance...']
 ## ON MESSAGE ###
 
 @bot.event
@@ -118,7 +118,7 @@ async def on_message(message):
                 rpsOn = False
         
         else:
-            await message.channel.send('Put in a choice (rock, paper, scissor) you fucking idiot')
+            await message.channel.send('Put in a choice (rock, paper, scissor)')
 
 
     if dice == True and message.author.id != bot.user.id:
@@ -127,7 +127,7 @@ async def on_message(message):
             diceNumber = random.randint(1, 6)
 
             if userDiceNum != diceNumber:
-                await message.channel.send(f'nuh uh WRRRROOOOOOOOOOOOOOOOONG it was {diceNumber} IDIOT')
+                await message.channel.send(f'nuh uh WRRRROOOOOOOOOOOOOOOOONG it was {diceNumber}')
                 dice = False
             else:
                 await message.channel.send('You got it!!!! HAAA!')
@@ -142,43 +142,38 @@ async def on_message(message):
 
 
 
-## MANUAL COMMANDS / AUTOMATED COMMANDS ##
-bot.remove_command("help")
-
-@bot.command(aliases=["help", "cmds", "commands"])
-async def list_commands(ctx):
-    await ctx.send("Commands (NOT case sensitive anymore 🔥): \n!lewisEffectOn \n!lewisEffectOff \n!randomBall \n!image (test command) \n!blackJack \n!ruler \n!inger \n!ingerOff \n!guessTheNum (not done) \n!bigBen \n!espresso \n!randomQuote \n!rps (or !rockpaperscissors / !rock) \n!dice")
-
+## MANUAL COMMANDS / AUTOMATED COMMANDS #
 
 #lewisEffectOn
-@bot.command()
-async def lewisEffectOn(ctx):
+@bot.tree.command(name='lewis-effect-on', description='Adds random words onto what you just said')
+async def lewisEffectOn(interaction: discord.Interaction):
     global effect
     effect = True
-    await ctx.send("Lewis effect is enabled.")
+    await interaction.response.send_message("Lewis effect is enabled.")
 
 
 #lewisEffectOff
-@bot.command()
-async def lewisEffectOff(ctx):
+@bot.tree.command(name='lewis-effect-off', description='Toggles Lewis Effect off')
+async def lewisEffectOff(interaction: discord.Interaction):
     global effect
     effect = False
-    await ctx.send("Lewis effect is disabled.")
+    await interaction.response.send_message("Lewis effect is disabled.")
 
 
 #randomBall
-@bot.command()
-async def randomBall(ctx):
+@bot.tree.command(name='8ball')
+async def randomBall(interaction: discord.Interaction):
     global question, question_user_id
     question = True
-    question_user_id = ctx.author.id
-    await ctx.send(f'{ctx.author.name}, Ask me a question!')
+    question_user_id = interaction.user.id
+    await interaction.response.send_message(f'{interaction.user.name}, Ask me a question!')
 
 
 #imageTest
-@bot.command()
-async def image(ctx):
-    await ctx.send(file=discord.File(r'C:/Users/lewis/Downloads/IMG_6847.jpg')) 
+@bot.tree.command(name='image', description='Test image to see if bot is running')
+async def image(interaction: discord.Interaction):
+    await interaction.response.defer()
+    await interaction.followup.send(file=discord.File(r'C:/Users/lewis/Downloads/IMG_6847.jpg')) 
 
 
 
@@ -252,8 +247,8 @@ def calculate_hand(hand):
     return value
 
 
-@bot.command()
-async def blackJack(ctx):
+@bot.tree.command(name='blackjack', description='Play a game of blackjack with me! (prone to bugs)')
+async def blackJack(interaction: discord.Interaction):
     player_hand = []
     dealer_hand = []
 
@@ -264,23 +259,27 @@ async def blackJack(ctx):
     dealer_hand.append(deal_card(deck))
     dealer_hand.append(deal_card(deck))
 
-    await ctx.send(display_hands(player_hand, dealer_hand))
+    await interaction.response.send_message(display_hands(player_hand, dealer_hand))
 
     
     def check(msg):
-        return msg.author == ctx.author and msg.content.lower() in ['hit', 'stand']
+        return msg.author.id == interaction.user.id and msg.channel == interaction.channel and msg.content.lower() in ['hit', 'stand']
 
     
     while True:
-        await ctx.send('Hit or Stand?')
-        msg = await bot.wait_for('message', check=check)
+        await interaction.followup.send('Hit or Stand?')
+        try:
+            msg = await bot.wait_for('message', check=check, timeout=60.0)
+        except asyncio.TimeoutError:
+            await interaction.followup.send("Timeout!")
+            return
 
         if msg.content.lower() == 'hit':
             player_hand.append(deal_card(deck))
-            await ctx.send(display_hands(player_hand, dealer_hand))
+            await interaction.followup.send(display_hands(player_hand, dealer_hand))
 
             if calculate_hand(player_hand) > 21:
-                await ctx.send('You bussssed! losaaaah')
+                await interaction.followup.send('You bussssed! losaaaah')
                 return
 
         elif msg.content.lower() == 'stand':
@@ -290,20 +289,20 @@ async def blackJack(ctx):
     while calculate_hand(dealer_hand) < 17:
         dealer_hand.append(deal_card(deck))
 
-    await ctx.send(display_hands(player_hand, dealer_hand, reveal_dealer=True))
+    await interaction.followup.send(display_hands(player_hand, dealer_hand, reveal_dealer=True))
 
     
     player_total = calculate_hand(player_hand)
     dealer_total = calculate_hand(dealer_hand)
 
     if dealer_total > 21:
-        await ctx.send('you won fuck u')
+        await interaction.followup.send('you won :(')
     elif player_total > dealer_total:
-        await ctx.send('you won fuck u')
+        await interaction.followup.send('you won :(')
     elif player_total < dealer_total:
-        await ctx.send('LMFAOOOO I WON AHHAHAHAHAHA')
+        await interaction.followup.send('I WON AHHAHAHAHAHA')
     else:
-        await ctx.send('its a.. tie? idk get ur money back')
+        await interaction.followup.send('its a.. tie? idk get ur money back')
 
     return
 
@@ -311,10 +310,9 @@ async def blackJack(ctx):
 
 measurements = ['kilometres', 'miles', 'hamburgers', 'crocodiles', 'bald eagles', 'centimetres', 'millimetres', 'metres', 'megametres', 'AU', 'lightyears', 'nanometres', 'feet', 'yards', 'toes', 'seconds', 'minutes', 'years', 'tomorrows']
 
-
-@bot.command()
-async def ruler(message):
-    await message.channel.send('What would you like to measure?')
+@bot.tree.command(name='ruler', description='Tell me something to measure!')
+async def ruler(interaction: discord.Interaction):
+    await interaction.response.send_message('What would you like to measure?')
     global measure
     measure = True
 
@@ -323,29 +321,29 @@ async def ruler(message):
 
 suffix = ['ing', 'nd' 'st', 'rd', 'th', 'ed', 'ily', 's', 'ist' 'ance', 'ible', 'ous', 'some', 'ery', 'ess', 'ish']
 
-@bot.command()
-async def inger(message):
-    await message.channel.send('I will now take every single message and add something to the end yk')
+@bot.tree.command(name='inger-on', description='adds random things onto the end of every message (eg ing)')
+async def inger(interaction: discord.Interaction):
+    await interaction.response.send_message('I will now take every single message and add something to the end yk')
     global suffixOn
     suffixOn = True
 
-@bot.command()
-async def ingerOff(message):
-    await message.channel.send('NUH UH ITS OFF NOOOOOOO')
+@bot.tree.command(name='inger-off', description='turn inger OFF')
+async def ingerOff(interaction: discord.Interaction):
+    await interaction.response.send_message('NUH UH ITS OFF NOOOOOOO')
     global suffixOn
     suffixOn = False
 
 
 
 
-@bot.command()
-async def guessTheNum(message):
+@bot.tree.command(name='guess-the-num', description='Guess the number! (BROKEN)')
+async def guessTheNum(interaction: discord.Interaction):
     global guessTheNumOn, timerOn
     guessTheNumOn = True 
-    await message.channel.send('RULES: \nThe player will have 20 seconds to guess the right number (between 1 - 40)\nYour time begins in 3 seconds')
+    await interaction.response.send_message('RULES: \nThe player will have 20 seconds to guess the right number (between 1 - 40)\nYour time begins in 3 seconds')
     time.sleep(3)
     timerOn = True
-    await message.channel.send('go go go!')
+    await interaction.followup.send('go go go!')
     
     
     async def timer():
@@ -410,10 +408,10 @@ async def bigBenAUTO():
 
 
 #MANUAL big ben
-@bot.command()
-async def bigBen(ctx):
-    if ctx.author.voice:
-        voice_channel = ctx.author.voice.channel
+@bot.tree.command(name='big-ben', description='Big Ben.')
+async def bigBen(interaction: discord.Interaction):
+    if interaction.user.voice:
+        voice_channel = interaction.user.voice.channel
         voice_client = await voice_channel.connect()
 
         try:
@@ -428,15 +426,15 @@ async def bigBen(ctx):
                 print(f'Error: {e}')
                 await voice_client.disconnect()
         else:
-            await ctx.send('You are not connected to a voice channel.')
+            await interaction.response.send_message('You are not connected to a voice channel.')
 
 
 
 #espressooooooooooo
-@bot.command()
-async def espresso(ctx):
-    if ctx.author.voice:
-        voice_channel = ctx.author.voice.channel
+@bot.tree.command(name='espresso', description='Joins VC to play espresso!')
+async def espresso(interaction: discord.Interaction):
+    if interaction.user.voice:
+        voice_channel = interaction.user.voice.channel
         voice_client = await voice_channel.connect()
 
         try:
@@ -451,12 +449,12 @@ async def espresso(ctx):
             print(f'Error: {e}')
             await voice_client.disconnect()
         else:
-            await ctx.send('lemesso')
+            await interaction.response.send_message('lemesso')
 
 
 
-@bot.command()
-async def randomQuote(ctx):
+@bot.tree.command(name='random-quote')
+async def randomQuote(interaction: discord.Interaction):
 
     searchArray = ['love', 'happiness', 'success', 'friendship', 'wisdom', 'life', 'strength', 'dreams', 'courage', 'nature']
     search = random.choice(searchArray)
@@ -468,7 +466,7 @@ async def randomQuote(ctx):
     else:
         quoteText = 'No quoties found matey!'
 
-    await ctx.send(quoteText)
+    await interaction.response.send_message(quoteText)
 
 
 @tasks.loop(seconds=1)
@@ -494,30 +492,24 @@ async def quoteOfTheDay():
         await quoteChannel.send(quoteText)
 
 
-@bot.command(aliases=["rockpaperscissors", "rock"])
-async def rps(ctx):
-
-    await ctx.send('Rock paper scissors! Lets play! (I will pick my choice randomly after youve done yours so its not rigged )')
+@bot.tree.command(name='rock-paper-scissors', description='Play Rock Paper Scissors with me!')
+async def rps(interaction: discord.Interaction):
+    await interaction.response.send_message('Rock paper scissors! Lets play! (I will pick my choice randomly after youve done yours so its not rigged )')
     global rpsOn
     rpsOn = True
 
 
-@bot.command()
-async def dice(ctx):
-    await ctx.send('Ill roll a 6 sided die. Guess the correct number or you get timed out.')
+@bot.tree.command(name='dice')
+async def dice(interaction: discord.Interaction):
+    await interaction.response.send_message('Ill roll a 6 sided die. Guess the correct number or you get timed out.')
     global dice
     dice = True
-    
-
-@bot.command()
-async def christmas(ctx):
-    await ctx.send(file=discord.File(r'C:/Users/lewis/Downloads/christmas.png')) 
 
 
-@bot.command()
-async def aero(ctx):
-    await ctx.send('Here are the aerodynamics of a pregnant man.')
-    await ctx.send(file=discord.File(r'C:/Users/lewis/Downloads/pregnantaero.png')) 
+@bot.tree.command(name='pregnant-man-aerodynamics')
+async def aero(interaction: discord.Interaction):
+    await interaction.response.send_message('Here are the aerodynamics of a pregnant man.')
+    await interaction.response.send_message(file=discord.File(r'C:/Users/lewis/Downloads/pregnantaero.png')) 
 
 
 bot.run(TOKEN)
