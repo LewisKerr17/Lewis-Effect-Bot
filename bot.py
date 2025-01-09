@@ -178,13 +178,13 @@ async def on_message(message):
 
         if finalColour == 'Black':
             blackNums = [0, 2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35]
-            finalNum = 4
+            finalNum = random.choice(redNums)
             if finalNum == 0:
                 finalColour = 'Green'
 
         if finalColour == 'Red':
             redNums = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
-            finalNum = 4
+            finalNum = random.choice(redNums)
 
         ####################
         if userRouletteGuessBool:
