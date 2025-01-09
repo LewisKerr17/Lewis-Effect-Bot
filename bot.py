@@ -178,7 +178,7 @@ async def on_message(message):
 
         if finalColour == 'Black':
             blackNums = [0, 2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35]
-            finalNum = random.choice(redNums)
+            finalNum = random.choice(blackNums)
             if finalNum == 0:
                 finalColour = 'Green'
 
