@@ -58,7 +58,7 @@ answers = ['yes', 'no', 'ask your mother', 'definitely', 'that is absolutely tru
 
 @bot.event
 async def on_message(message):
-    global effect, question, question_user_id, measure, suffixOn, timerOn, guessTheNumOn, gptQuestion, messages, rouletteOn, rouletteNumbers, rouletteGood, rouletteBad, rouletteNeutral, rouletteCharm, rpsOn, diceNumbers, dice
+    global effect, question, question_user_id, measure, suffixOn, timerOn, guessTheNumOn, gptQuestion, messages, rpsOn, diceNumbers, dice, rouletteOn
 
     if message.author.bot:
         return
@@ -79,7 +79,7 @@ async def on_message(message):
         await message.channel.send('The length of ' + message.content + ' is ' + str(random.randint(0, 5000)) + ' ' + random.choice(measurements))
         measure = False
 
-    #??
+    #Inger
     if suffixOn and message.author.id != bot.user.id:
         await message.channel.send(message.content + random.choice(suffix))
 
@@ -138,6 +138,149 @@ async def on_message(message):
             await message.channel.send('NUMBER IDIOTTTTTTTTTTAAAAAA SHHHHHHHHH!!!')
             dice = False
 
+
+    if rouletteOn and message.author.id != bot.user.id:
+        global username
+        username = message.author.name
+        global fieldNames
+        fieldNames = ['Name', 'Tokens']
+        global userTokens
+        userTokens = 0
+        global nameFound
+        nameFound = False
+        global betOn
+        betOn = False
+        global betAmount
+        betAmount = 50
+        global userRouletteGuessBool
+        userRouletteGuessBool = False
+        global userRouletteNumBool
+        userRouletteNumBool = False
+        global updated
+        updated = False
+
+        if message.content.isdigit() and message.author.id != bot.user.id:
+            betAmount = int(message.content)
+
+        if message.content.isdigit() and message.author.id != bot.user.id:
+            userRouletteNum = int(message.content)
+            userRouletteNumBool = True
+            betOn = True
+        else:
+            userRouletteGuess = message.content.lower()
+            userRouletteGuessBool = True
+            betOn = True
+
+
+        colours = ['Black', 'Red']
+        finalColour = random.choice(colours)
+
+        if finalColour == 'Black':
+            blackNums = [0, 2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35]
+            finalNum = random.choice(blackNums)
+            if finalNum == 0:
+                finalColour = 'Green'
+
+        if finalColour == 'Red':
+            redNums = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+            finalNum = random.choice(redNums)
+
+        ####################
+        if userRouletteGuessBool:
+            if userRouletteGuess == 'odd':
+                if finalNum % 2 == 1:
+                    await message.channel.send(f'{finalColour} {finalNum} - You win!')
+                    userTokens = betAmount * 2
+                    userRouletteGuessBool = False
+                    rouletteOn = False
+
+                else:
+                    await message.channel.send(f'{finalColour} {finalNum} - You lose!')
+                    userTokens = userTokens - betAmount
+                    userRouletteGuessBool = False
+                    rouletteOn = False
+
+
+            elif userRouletteGuess == 'even':
+                if finalNum % 2 == 0:
+                    if finalNum != 0:
+                        await message.channel.send(f'{finalColour} {finalNum} - You win!')
+                        userTokens = betAmount * 2
+                        userRouletteGuessBool = False
+                        rouletteOn = False
+
+                    else:
+                        await message.channel.send(f'{finalColour} {finalNum} - You lose!')
+                        userTokens = userTokens - betAmount
+                        userRouletteGuessBool = False
+                        rouletteOn = False
+
+                else:
+                    await message.channel.send(f'{finalColour} {finalNum} - You lose!')
+                    userTokens = userTokens - betAmount
+                    userRouletteGuessBool = False
+                    rouletteOn = False
+
+
+            ####################
+
+            if userRouletteGuess == 'black':
+                if finalColour == 'Black':
+                    await message.channel.send(f'{finalColour} {finalNum} - You win!')
+                    userTokens = betAmount * 2
+                    userRouletteGuessBool = False
+                    rouletteOn = False
+
+                else:
+                    await message.channel.send(f'{finalColour} {finalNum} - You lose!')
+                    userTokens = userTokens - betAmount
+                    userRouletteGuessBool = False
+                    rouletteOn = False
+
+            
+            if userRouletteGuess == 'red':
+                if finalColour == 'Red':
+                    await message.channel.send(f'{finalColour} {finalNum} - You win!')
+                    userTokens = betAmount * 2
+                    userRouletteGuessBool = False
+                    rouletteOn = False
+
+                else:
+                    await message.channel.send(f'{finalColour} {finalNum} - You lose!')
+                    userTokens = userTokens - betAmount
+                    userRouletteGuessBool = False
+                    rouletteOn = False
+
+
+    
+        if userRouletteNumBool:
+            if userRouletteNum == finalNum:
+                await message.channel.send(f'{finalColour} {finalNum} - You win!')
+                userRouletteNumBool = False
+            else:
+                await message.channel.send(f'{finalColour} {finalNum} - You lose!')
+                userRouletteNumBool = False
+
+        #CSV STUFF#
+
+        with open('stats.csv', 'r') as csvfile:
+            reader = csv.DictReader(csvfile, fieldnames=fieldNames)
+            data = list(reader)
+
+
+        for row in data:
+            if row['Name'] == username:
+                row['Tokens'] = str(int(row['Tokens']) + userTokens)
+                updated = True
+                break
+
+        if not updated:
+            data.append({'Name': username, 'Tokens': str(userTokens)})
+        
+        with open('stats.csv', 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldNames)
+            writer.writerows(data)
+        
     await bot.process_commands(message)
 
 
@@ -181,19 +324,6 @@ async def image(interaction: discord.Interaction):
 async def slashTest(interaction: discord.Interaction):
     await interaction.response.send_message('yup it works')
 
-
-@bot.tree.command(name='slots', description='Slot machine cuz gambling is COOL')
-async def slotMachine(interaction: discord.Interaction):
-    response = (
-        "```\n"
-        "╒--------------------------------╕\n"
-        "|                                |\n"
-        "|                                |\n"
-        "|                                |\n"
-        "╘--------------------------------╛\n"
-        "```"
-    )
-    await interaction.response.send_message(response)
 
 #Blackjack
 
@@ -509,7 +639,35 @@ async def dice(interaction: discord.Interaction):
 @bot.tree.command(name='pregnant-man-aerodynamics')
 async def aero(interaction: discord.Interaction):
     await interaction.response.send_message('Here are the aerodynamics of a pregnant man.')
-    await interaction.response.send_message(file=discord.File(r'C:/Users/lewis/Downloads/pregnantaero.png')) 
+    await interaction.followup.send(file=discord.File(r'C:/Users/lewis/Downloads/pregnantaero.png')) 
+
+
+@bot.tree.command(name='roulette')
+async def roulette(interaction: discord.Interaction):
+    global rouletteOn
+    rouletteOn = True
+    await interaction.response.send_message(file=discord.File(r'C:/Users/lewis/Downloads/rouletteboard.jpg'))
+    await interaction.followup.send('Bet on: 0 - 36, EVEN, ODD, RED, BLACK!')
+
+
+@bot.tree.command(name='tokens')
+async def roulette(interaction: discord.Interaction):
+    fieldNames = ['Name', 'Tokens']
+    nameFound = False
+    username = interaction.user.name
+    with open('stats.csv', 'r') as csvfile:
+            reader = csv.DictReader(csvfile, fieldnames=fieldNames)
+            data = list(reader)
+
+    for row in data:
+        if row['Name'] == username:
+            nameFound = True
+            break
+
+    if nameFound:
+        await interaction.response.send_message(f'{interaction.user.name}, you have {str(row['Tokens'])} Tokens.')
+    else:
+        await interaction.followup.send_message('You dont have any tokens! Play something to get some!')
 
 
 bot.run(TOKEN)
