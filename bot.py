@@ -263,6 +263,7 @@ async def on_message(message):
                 rouletteOn = False
             else:
                 await message.channel.send(f'{finalColour} {finalNum} - You lose!')
+                userTokens = userTokens - betAmount
                 userRouletteNumBool = False
                 rouletteOn = False
 
