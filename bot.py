@@ -161,9 +161,6 @@ async def on_message(message):
         updated = False
 
         if message.content.isdigit() and message.author.id != bot.user.id:
-            betAmount = int(message.content)
-
-        if message.content.isdigit() and message.author.id != bot.user.id:
             userRouletteNum = int(message.content)
             userRouletteNumBool = True
             betOn = True
