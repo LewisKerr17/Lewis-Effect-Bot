@@ -153,6 +153,8 @@ async def on_message(message):
         betOn = False
         global betAmount
         betAmount = 50
+        global to12
+        to12 = False
         global userRouletteGuessBool
         userRouletteGuessBool = False
         global userRouletteNumBool
@@ -160,10 +162,15 @@ async def on_message(message):
         global updated
         updated = False
 
-        if message.content.isdigit() and message.author.id != bot.user.id:
+        if message.content.lower() == "1 to 12" and message.author.id != bot.user.id:
+            to12 = True
+            betOn = True
+        
+        elif message.content.isdigit() and message.author.id != bot.user.id:
             userRouletteNum = int(message.content)
             userRouletteNumBool = True
             betOn = True
+        
         else:
             userRouletteGuess = message.content.lower()
             userRouletteGuessBool = True
@@ -262,6 +269,18 @@ async def on_message(message):
                 await message.channel.send(f'{finalColour} {finalNum} - You lose!')
                 userTokens = userTokens - betAmount
                 userRouletteNumBool = False
+                rouletteOn = False
+
+        if to12:
+            if finalNum <= 12:
+                await message.channel.send(f'{finalColour} {finalNum} - You win!')
+                userTokens = betAmount * 3
+                to12 = False
+                rouletteOn = False
+            else:
+                await message.channel.send(f'{finalColour} {finalNum} - You lose!')
+                userTokens = userTokens - betAmount
+                to12 = False
                 rouletteOn = False
 
         #CSV STUFF#
@@ -500,7 +519,7 @@ async def guessTheNum(interaction: discord.Interaction):
 async def bigBenAUTO():
     time_now = datetime.now().strftime("%H:%M:%S")
 
-    if time_now in ["22:24:30", "00:00:00", "01:00:00", "02:00:00", "03:00:00", "04:00:00", "05:00:00", "06:00:00", "07:00:00", "08:00:00", "09:00:00", "10:00:00", "11:00:00", "12:00:00", "13:00:00", "14:00:00", "15:00:00", "16:00:00", "17:00:00", "18:00:00", "19:00:00", "20:00:00", "21:00:00", "22:00:00", "23:00:00"]: 
+    if time_now in ["00:00:00", "01:00:00", "02:00:00", "03:00:00", "04:00:00", "05:00:00", "06:00:00", "07:00:00", "08:00:00", "09:00:00", "10:00:00", "11:00:00", "12:00:00", "13:00:00", "14:00:00", "15:00:00", "16:00:00", "17:00:00", "18:00:00", "19:00:00", "20:00:00", "21:00:00", "22:00:00", "23:00:00"]: 
 
         for guild in bot.guilds:
             if guild.id != 837266679443619860:
@@ -514,7 +533,7 @@ async def bigBenAUTO():
             channel_check = [vc for vc in guild.voice_channels if len(vc.members) > 0]
 
             if not channel_check:
-                print('VC is dead')
+                print('VC is empty')
                 return
         
         channel = max(channel_check, key=lambda vc: len(vc.members))
@@ -671,6 +690,11 @@ async def roulette(interaction: discord.Interaction):
         await interaction.response.send_message(f'{interaction.user.name}, you have {str(row['Tokens'])} Tokens.')
     else:
         await interaction.followup.send_message('You dont have any tokens! Play something to get some!')
+
+@bot.tree.command(name='random-fact')
+async def randomfact(interaction: discord.Interaction):
+    randomFactFinal = randfacts.get_fact()
+    await interaction.response.send_message(randomFactFinal)
 
 
 bot.run(TOKEN)
