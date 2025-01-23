@@ -141,6 +141,10 @@ async def on_message(message):
 
 
     if rouletteOn and message.author.id != bot.user.id:
+
+
+
+        #user variables
         global username
         username = message.author.name
         global fieldNames
@@ -149,12 +153,16 @@ async def on_message(message):
         userTokens = 0
         global nameFound
         nameFound = False
+        
+        #bet variables
         global betOn
         betOn = False
-        global betAmount
-        betAmount = 50
         global to12
         to12 = False
+        global to24
+        to24 = False
+        global to36
+        to36 = False
         global userRouletteGuessBool
         userRouletteGuessBool = False
         global userRouletteNumBool
@@ -162,8 +170,44 @@ async def on_message(message):
         global updated
         updated = False
 
-        if message.content.lower() == "1 to 12" and message.author.id != bot.user.id:
+        
+        #user tokens init / find
+
+        with open('stats.csv', 'r') as csvfile:
+            reader = csv.DictReader(csvfile, fieldnames=fieldNames)
+            data = list(reader)
+
+
+        for row in data:
+            if row['Name'] == username:
+                userRow = row['Tokens'] = str(int(row['Tokens']))
+                updated = True
+                break
+
+        if not updated:
+            data.append({'Name': username, 'Tokens': str(userTokens)})
+            if row['Name'] == username:
+                userRow = row['Tokens'] = str(int(row['Tokens']))
+                updated = True
+
+        
+        global betAmount
+        betAmount = int(userRow) / 10
+
+
+    #check message
+
+
+        if message.content.lower() == "1st 12" and message.author.id != bot.user.id:
             to12 = True
+            betOn = True
+        
+        elif message.content.lower() == "2nd 12" and message.author.id != bot.user.id:
+            to24 = True
+            betOn = True
+        
+        elif message.content.lower() == "3rd 12" and message.author.id != bot.user.id:
+            to36 = True
             betOn = True
         
         elif message.content.isdigit() and message.author.id != bot.user.id:
@@ -176,7 +220,8 @@ async def on_message(message):
             userRouletteGuessBool = True
             betOn = True
 
-
+    #set colours and random nums
+    
         colours = ['Black', 'Red']
         finalColour = random.choice(colours)
 
@@ -190,7 +235,9 @@ async def on_message(message):
             redNums = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
             finalNum = random.choice(redNums)
 
-        ####################
+
+    #odd/even
+    
         if userRouletteGuessBool:
             if userRouletteGuess == 'odd':
                 if finalNum % 2 == 1:
@@ -227,7 +274,7 @@ async def on_message(message):
                     rouletteOn = False
 
 
-            ####################
+    #colours
 
             if userRouletteGuess == 'black':
                 if finalColour == 'Black':
@@ -257,7 +304,8 @@ async def on_message(message):
                     rouletteOn = False
 
 
-    
+    #numbet
+
         if userRouletteNumBool:
             if userRouletteNum == finalNum:
                 await message.channel.send(f'{finalColour} {finalNum} - You win!')
@@ -271,6 +319,9 @@ async def on_message(message):
                 userRouletteNumBool = False
                 rouletteOn = False
 
+
+    #to12
+
         if to12:
             if finalNum <= 12:
                 await message.channel.send(f'{finalColour} {finalNum} - You win!')
@@ -283,21 +334,51 @@ async def on_message(message):
                 to12 = False
                 rouletteOn = False
 
-        #CSV STUFF#
+    #to24
+
+        if to24:
+            if finalNum > 12 and finalNum <= 24:
+                await message.channel.send(f'{finalColour} {finalNum} - You win!')
+                userTokens = betAmount * 3
+                to24 = False
+                rouletteOn = False
+            else:
+                await message.channel.send(f'{finalColour} {finalNum} - You lose!')
+                userTokens = userTokens - betAmount
+                to24 = False
+                rouletteOn = False
+
+    #to36
+
+        if to36:
+            if finalNum > 24 and finalNum <= 36:
+                await message.channel.send(f'{finalColour} {finalNum} - You win!')
+                userTokens = betAmount * 3
+                to36 = False
+                rouletteOn = False
+            else:
+                await message.channel.send(f'{finalColour} {finalNum} - You lose!')
+                userTokens = userTokens - betAmount
+                to36 = False
+                rouletteOn = False
+
+        finalUserTokens = round(userTokens)
 
         with open('stats.csv', 'r') as csvfile:
             reader = csv.DictReader(csvfile, fieldnames=fieldNames)
             data = list(reader)
-
-
+        
         for row in data:
             if row['Name'] == username:
-                row['Tokens'] = str(int(row['Tokens']) + userTokens)
+                userRow = row['Tokens'] = str(int(row['Tokens']) + finalUserTokens)
                 updated = True
                 break
 
         if not updated:
-            data.append({'Name': username, 'Tokens': str(userTokens)})
+            data.append({'Name': username, 'Tokens': str(finalUserTokens)})
+
+
+        #CSV STUFF#
         
         with open('stats.csv', 'w', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldNames)
@@ -669,7 +750,7 @@ async def roulette(interaction: discord.Interaction):
     global rouletteOn
     rouletteOn = True
     await interaction.response.send_message(file=discord.File(r'C:/Users/lewis/Downloads/rouletteboard.jpg'))
-    await interaction.followup.send('Bet on: 0 - 36, EVEN, ODD, RED, BLACK!')
+    await interaction.followup.send('Bet on: \n| 0 - 36 |\n| 1st 12 | 2nd 12 | 3rd 12 |\n| EVEN | ODD |\n| 🟥 | ⬛ |\n(bet is 10 percent of your total tokens, use /tokens to see your tokens.)')
 
 
 @bot.tree.command(name='tokens')
