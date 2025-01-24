@@ -186,9 +186,6 @@ async def on_message(message):
 
         if not updated:
             data.append({'Name': username, 'Tokens': str(userTokens)})
-            if row['Name'] == username:
-                userRow = row['Tokens'] = str(int(row['Tokens']))
-                updated = True
 
         
         global betAmount
@@ -363,10 +360,6 @@ async def on_message(message):
                 rouletteOn = False
 
         finalUserTokens = round(userTokens)
-
-        with open('stats.csv', 'r') as csvfile:
-            reader = csv.DictReader(csvfile, fieldnames=fieldNames)
-            data = list(reader)
         
         for row in data:
             if row['Name'] == username:
@@ -458,7 +451,7 @@ def display_hands(player_hand, dealer_hand, reveal_dealer = False):
     if reveal_dealer:
         dealer_display = ', '.join(dealer_hand)
         return (f'Players hand: {player_display} (Total: {player_total})\n'
-                f'Dealers hand: {dealer_display} (Total: {dealer_total})')
+                f'Dealers hand: {dealer_display} (Total: {dealer_total})\n')
     else:
         dealer_display = dealer_hand[0] + ', [Hidden]'
     return (f'Players hand: {player_display} (Total: {player_total})\n'
@@ -484,6 +477,27 @@ def calculate_hand(hand):
 async def blackJack(interaction: discord.Interaction):
     player_hand = []
     dealer_hand = []
+    blackJackTokens = 0
+    fieldNames = ['Name', 'Tokens']
+    username = interaction.user.name
+    updated = False
+
+    with open('stats.csv', 'r') as csvfile:
+        reader = csv.DictReader(csvfile, fieldnames=fieldNames)
+        data = list(reader)
+
+
+    for row in data:
+        if row['Name'] == username:
+            userRow = row['Tokens'] = str(int(row['Tokens']))
+            updated = True
+            break
+
+    if not updated:
+        data.append({'Name': username, 'Tokens': str(blackJackTokens)})
+
+    global betAmountJack
+    betAmountJack = int(userRow) / 10
 
     # Initial deal
     player_hand.append(deal_card(deck))
@@ -500,7 +514,7 @@ async def blackJack(interaction: discord.Interaction):
 
     
     while True:
-        await interaction.followup.send('Hit or Stand?')
+        await interaction.followup.send(f'Hit or Stand?\nBet: {round(betAmountJack)}')
         try:
             msg = await bot.wait_for('message', check=check, timeout=60.0)
         except asyncio.TimeoutError:
@@ -513,6 +527,7 @@ async def blackJack(interaction: discord.Interaction):
 
             if calculate_hand(player_hand) > 21:
                 await interaction.followup.send('You bussssed! losaaaah')
+                blackJackTokens = blackJackTokens - betAmountJack
                 return
 
         elif msg.content.lower() == 'stand':
@@ -530,14 +545,35 @@ async def blackJack(interaction: discord.Interaction):
 
     if dealer_total > 21:
         await interaction.followup.send('you won :(')
+        blackJackTokens = betAmountJack * 2
     elif player_total > dealer_total:
         await interaction.followup.send('you won :(')
+        blackJackTokens = betAmountJack * 2
     elif player_total < dealer_total:
         await interaction.followup.send('I WON AHHAHAHAHAHA')
+        blackJackTokens = blackJackTokens - betAmountJack
     else:
         await interaction.followup.send('its a.. tie? idk get ur money back')
 
-    return
+    finalUserTokens = round(blackJackTokens)
+
+
+    for row in data:
+        if row['Name'] == username:
+            userRow = row['Tokens'] = str(int(row['Tokens']) + finalUserTokens)
+            updated = True
+            break
+
+    if not updated:
+        data.append({'Name': username, 'Tokens': str(finalUserTokens)})
+
+
+    #CSV STUFF#
+    
+    with open('stats.csv', 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldNames)
+        writer.writerows(data)
+
 
 
 
