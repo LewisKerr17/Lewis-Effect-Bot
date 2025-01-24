@@ -743,9 +743,9 @@ async def quoteOfTheDay():
     
     
     time_now = datetime.now().strftime("%H:%M:%S")
-    targetTime = '17:00:00'
+    targetTime = ['09:00:00', '12:00:00', '17:00:00', '20:30:00']
 
-    if time_now == targetTime:
+    if time_now in targetTime:
         quoteChannel = bot.get_channel(1201260512160256050)
         searchArray = ['love', 'happiness', 'success', 'friendship', 'wisdom', 'life', 'strength', 'dreams', 'courage', 'nature']
         search = random.choice(searchArray)
