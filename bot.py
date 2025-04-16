@@ -53,13 +53,26 @@ gptQuestion = False
 rouletteOn = False
 rpsOn = False
 dice = False
+busOn = False
+colourGuess = False
+valueGuess = False
+rangeGuess = False
+suitGuess = False
+cardsCalled = []
 
+def startBus():
+    global colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled
+    colourGuess = True
+    valueGuess = False
+    rangeGuess = False
+    suitGuess = False
+    cardsCalled = []
 answers = ['yes', 'no', 'ask your mother', 'definitely', 'that is absolutely true', 'very no', 'absolutely not', 'not at all true', 'that is false', 'I do not care', 'this is not my business', 'and why is that my problem?', 'get raph to answer this idk', 'just because im an 8ball doesnt mean i can fix all of your problems', 'why?', 'who?', 'how?', 'how does society accept this at all?', 'elon musk might have something to say about that', 'come out already', 'this is so not right', 'nuh uh', 'yuh huh', 'perchance...']
 ## ON MESSAGE ###
 
 @bot.event
 async def on_message(message):
-    global effect, question, question_user_id, measure, suffixOn, timerOn, guessTheNumOn, gptQuestion, messages, rpsOn, diceNumbers, dice, rouletteOn
+    global effect, question, question_user_id, measure, suffixOn, timerOn, guessTheNumOn, gptQuestion, messages, rpsOn, diceNumbers, dice, rouletteOn, busOn, colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled
 
     if message.author.bot:
         return
@@ -378,6 +391,121 @@ async def on_message(message):
             writer.writerows(data)
         
     await bot.process_commands(message)
+
+
+
+    #ridethebus
+    if busOn and message.author.id != bot.user.id:
+
+        startBus()
+
+
+        username = message.author.name
+        fieldNames = ['Name', 'Tokens']
+        userTokens = 0
+        nameFound = False
+
+        with open('stats.csv', 'r') as csvfile:
+            reader = csv.DictReader(csvfile, fieldnames=fieldNames)
+            data = list(reader)
+
+
+        for row in data:
+            if row['Name'] == username:
+                userRow = row['Tokens'] = str(int(row['Tokens']))
+                updated = True
+                break
+
+        if not updated:
+            data.append({'Name': username, 'Tokens': str(userTokens)})
+
+        betAmount = int(userRow) / 10
+
+
+        #MAIN
+        def busCards():
+            colours = ['black', 'red']
+            global busColour
+            busColour = random.choice(colours)
+
+            nums = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+            global busNum
+            busNum = random.choice(nums)
+
+        if colourGuess:
+            userColourGuess = message.content.lower()
+            busCards()
+            actualColour = busColour
+            actualNum = busNum
+            cardsCalled.append(actualNum)
+            if userColourGuess == actualColour:
+                await message.channel.send(f'{actualColour} {actualNum} - Correct!')
+                await message.channel.send('Higher or lower?')
+                colourGuess = False
+                valueGuess = True
+            else:
+                await message.channel.send(f'{actualColour} {actualNum} - Incorrect!')
+                busOn = False
+
+        
+        elif valueGuess:
+            userValueGuess = message.content.lower()
+            firstCard = cardsCalled[0]
+            busCards()
+            secondNum = busNum
+            secondColour = busColour
+
+            print(f'first = {firstCard}, second = {secondNum}, guess = {userValueGuess}')
+
+            if userValueGuess == 'higher':
+                if secondNum > firstCard:
+                    await message.channel.send(f'{secondColour} {secondNum} - Correct!')
+                    await message.channel.send('Between these values or outwith these values?')
+                    cardsCalled.append(secondNum)
+                    valueGuess = False
+                    rangeGuess = True
+                else:
+                    await message.channel.send(f'{secondColour} {secondNum} - Incorrect!')
+                    busOn = False
+            
+            elif userValueGuess == 'lower':
+                if secondNum < firstCard:
+                    await message.channel.send(f'{secondColour} {secondNum} - Correct!')
+                    await message.channel.send('Between these values or outwith these values?')
+                    cardsCalled.append(secondNum)
+                    valueGuess = False
+                    rangeGuess = True
+                else:
+                    await message.channel.send(f'{secondColour} {secondNum} - Incorrect!')
+                    busOn = False
+
+
+        if rangeGuess:
+            userRangeGuess = message.content.lower()
+            firstCard = cardsCalled[0]
+            secondCard = cardsCalled[1]
+            busCards()
+            thirdNum = busNum
+            if userRangeGuess == 'between':
+                if thirdNum > firstCard and thirdNum < secondCard:
+                    await message.channel.send(f'{busColour} {busNum} - Correct!')
+                    await message.channel.send('What will the suit be?')
+                    cardsCalled.append(busNum)
+                    suitGuess = True
+                else:
+                    await message.channel.send(f'{busColour} {busNum} - Incorrect!')
+                    busOn = False
+
+            if userRangeGuess == 'outwith' or userRangeGuess == 'out':
+                if thirdNum < firstCard and thirdNum > secondCard:
+                    await message.channel.send(f'{busColour} {busNum} - Correct!')
+                    await message.channel.send('What will the suit be?')
+                    cardsCalled.append(busNum)
+                    suitGuess = True
+                else:
+                    await message.channel.send(f'{busColour} {busNum} - Incorrect!')
+                    busOn = False
+            
 
 
 
@@ -787,6 +915,13 @@ async def roulette(interaction: discord.Interaction):
     rouletteOn = True
     await interaction.response.send_message(file=discord.File(r'C:/Users/lewis/Downloads/rouletteboard.jpg'))
     await interaction.followup.send('Bet on: \n| 0 - 36 |\n| 1st 12 | 2nd 12 | 3rd 12 |\n| EVEN | ODD |\n| 🟥 | ⬛ |\n(bet is 10 percent of your total tokens, use /tokens to see your tokens.)')
+
+@bot.tree.command(name='ride-the-bus')
+async def bus(interaction: discord.Interaction):
+    global busOn
+    busOn = True
+    await interaction.response.send_message('Ride the Bus \n\nThere will be a total of 4 rounds in which for each round you bet on properties of the upcoming card\nThese bets consist of:\n\n+Colour (🟥,⬛)\n+Higher / lower than previous card value\nBetween or outwith of the previous 2 cards values (eg 10 and 4)\nCard suit (club, diamond, heart, spade)\n\nThere is a multiplier on your bet the further you can make it.')
+    await interaction.followup.send('Colour? (🟥, ⬛)')
 
 
 @bot.tree.command(name='tokens')
