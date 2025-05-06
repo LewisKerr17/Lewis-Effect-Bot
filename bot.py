@@ -672,10 +672,10 @@ async def blackJack(interaction: discord.Interaction):
 
     if dealer_total > 21:
         await interaction.followup.send('you won :(')
-        blackJackTokens = betAmountJack * 2
+        blackJackTokens = betAmountJack
     elif player_total > dealer_total:
         await interaction.followup.send('you won :(')
-        blackJackTokens = betAmountJack * 2
+        blackJackTokens = betAmountJack
     elif player_total < dealer_total:
         await interaction.followup.send('I WON AHHAHAHAHAHA')
         blackJackTokens = blackJackTokens - betAmountJack
