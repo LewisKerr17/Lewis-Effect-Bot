@@ -252,7 +252,7 @@ async def on_message(message):
             if userRouletteGuess == 'odd':
                 if finalNum % 2 == 1:
                     await message.channel.send(f'{finalColour} {finalNum} - You win!')
-                    userTokens = betAmount * 2
+                    userTokens = betAmount
                     userRouletteGuessBool = False
                     rouletteOn = False
 
@@ -267,7 +267,7 @@ async def on_message(message):
                 if finalNum % 2 == 0:
                     if finalNum != 0:
                         await message.channel.send(f'{finalColour} {finalNum} - You win!')
-                        userTokens = betAmount * 2
+                        userTokens = betAmount
                         userRouletteGuessBool = False
                         rouletteOn = False
 
@@ -289,7 +289,7 @@ async def on_message(message):
             if userRouletteGuess == 'black':
                 if finalColour == 'Black':
                     await message.channel.send(f'{finalColour} {finalNum} - You win!')
-                    userTokens = betAmount * 2
+                    userTokens = betAmount
                     userRouletteGuessBool = False
                     rouletteOn = False
 
@@ -303,7 +303,7 @@ async def on_message(message):
             if userRouletteGuess == 'red':
                 if finalColour == 'Red':
                     await message.channel.send(f'{finalColour} {finalNum} - You win!')
-                    userTokens = betAmount * 2
+                    userTokens = betAmount
                     userRouletteGuessBool = False
                     rouletteOn = False
 
@@ -319,8 +319,7 @@ async def on_message(message):
         if userRouletteNumBool:
             if userRouletteNum == finalNum:
                 await message.channel.send(f'{finalColour} {finalNum} - You win!')
-                betAmount = 50
-                userTokens = betAmount * 35
+                userTokens = betAmount * 34
                 userRouletteNumBool = False
                 rouletteOn = False
             else:
@@ -335,7 +334,7 @@ async def on_message(message):
         if to12:
             if finalNum <= 12:
                 await message.channel.send(f'{finalColour} {finalNum} - You win!')
-                userTokens = betAmount * 3
+                userTokens = betAmount * 2
                 to12 = False
                 rouletteOn = False
             else:
@@ -349,7 +348,7 @@ async def on_message(message):
         if to24:
             if finalNum > 12 and finalNum <= 24:
                 await message.channel.send(f'{finalColour} {finalNum} - You win!')
-                userTokens = betAmount * 3
+                userTokens = betAmount * 2
                 to24 = False
                 rouletteOn = False
             else:
@@ -363,7 +362,7 @@ async def on_message(message):
         if to36:
             if finalNum > 24 and finalNum <= 36:
                 await message.channel.send(f'{finalColour} {finalNum} - You win!')
-                userTokens = betAmount * 3
+                userTokens = betAmount * 2
                 to36 = False
                 rouletteOn = False
             else:
