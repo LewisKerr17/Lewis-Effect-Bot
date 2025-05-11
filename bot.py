@@ -17,6 +17,7 @@ import math
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
+openai.api_key = os.getenv('API_KEY')
 
 
 CHANNEL_ID = 947902507437391924
@@ -25,7 +26,7 @@ CHANNEL_ID = 947902507437391924
 
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all(), case_insensitive=True)
 
-
+userSession = {} 
 
 
 @bot.event
@@ -59,6 +60,7 @@ valueGuess = False
 rangeGuess = False
 suitGuess = False
 cardsCalled = []
+aiOn = False
 
 def startBus():
     global colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled
@@ -72,7 +74,7 @@ answers = ['yes', 'no', 'ask your mother', 'definitely', 'that is absolutely tru
 
 @bot.event
 async def on_message(message):
-    global effect, question, question_user_id, measure, suffixOn, timerOn, guessTheNumOn, gptQuestion, messages, rpsOn, diceNumbers, dice, rouletteOn, busOn, colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled
+    global effect, question, question_user_id, measure, suffixOn, timerOn, guessTheNumOn, gptQuestion, messages, rpsOn, diceNumbers, dice, rouletteOn, busOn, colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled, aiOn
 
     if message.author.bot:
         return
@@ -506,6 +508,35 @@ async def on_message(message):
                     busOn = False
             
 
+    
+
+    #AIChat
+
+    if aiOn and message.author.id != bot.user.id:
+
+        aiUserID = message.author.id
+
+        if aiUserID in userSession:
+            userSession[aiUserID].append({"role": "user", "content": message.content})
+
+            try:
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=userSession[aiUserID],
+                    max_tokens=150,
+                    temperature=0.7
+                )
+
+                reply = response.choices[0].message.content.strip()
+                userSession[aiUserID].append({"role": "assistant", "content": reply})
+                await message.channel.send(reply)
+
+            except Exception as e:
+                await message.channel.send("Something went wrong.")
+                print(e)
+
+        await bot.process_commands(message)
+
 
 
 
@@ -663,7 +694,7 @@ async def blackJack(interaction: discord.Interaction):
     
     while calculate_hand(dealer_hand) < 17:
         dealer_hand.append(deal_card(deck))
-
+#devil
     await interaction.followup.send(display_hands(player_hand, dealer_hand, reveal_dealer=True))
 
     
@@ -858,7 +889,7 @@ async def randomQuote(interaction: discord.Interaction):
 
     if quotes:
         selectedQuote = random.choice(quotes)
-        quoteText = f'"{selectedQuote['quote']} - {selectedQuote['author']}'
+        quoteText = f'"{selectedQuote['quote']}" - {selectedQuote['author']}'
     else:
         quoteText = 'No quoties found matey!'
 
@@ -940,12 +971,46 @@ async def roulette(interaction: discord.Interaction):
     if nameFound:
         await interaction.response.send_message(f'{interaction.user.name}, you have {str(row['Tokens'])} Tokens.')
     else:
-        await interaction.followup.send_message('You dont have any tokens! Play something to get some!')
+        await interaction.followup.send('You dont have any tokens! Play something to get some!')
 
 @bot.tree.command(name='random-fact')
-async def randomfact(interaction: discord.Interaction):
+async def randomFact(interaction: discord.Interaction):
     randomFactFinal = randfacts.get_fact()
     await interaction.response.send_message(randomFactFinal)
+
+
+
+@bot.tree.command(name='open-chat')
+async def aiChat(interaction: discord.Interaction, *, prompt: str):
+
+    aiUserID = interaction.user.id
+    userSession[aiUserID] = [{'role': 'user', 'content': prompt}]
+    global aiOn
+    aiOn = True
+
+
+    try:
+        aiResponse = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=userSession[aiUserID],
+            max_tokens=150,
+            temperature=0.7
+        )
+
+        reply = aiResponse.choices[0].message.content.strip()
+        userSession[aiUserID].append({'role': 'assistant', 'content': reply})
+        await interaction.followup.send(f'Chat started. \n{reply}')
+
+    except Exception as e:
+        await interaction.response.send_message('Whoops! Error!')
+        print(e)
+
+@bot.tree.command(name='close-chat')
+async def closeAI(interaction: discord.Interaction):
+
+    global aiOn
+    aiOn = False
+    await interaction.response.send_message('AI has been turned off. :(')
 
 
 bot.run(TOKEN)
