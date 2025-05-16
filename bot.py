@@ -14,6 +14,8 @@ from quote import quote
 import csv
 import randfacts
 import math
+import requests
+import aiohttp
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -26,7 +28,15 @@ CHANNEL_ID = 947902507437391924
 
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all(), case_insensitive=True)
 
-userSession = {} 
+userSession = {}
+huggingFaceToken = os.getenv("HUGGINGFACE_TOKEN")
+HEADERS = {
+    "Authorization": f"Bearer {huggingFaceToken}"
+}
+API = "https://api-inference.huggingface.co/google/flan-t5-base"
+
+
+
 
 
 @bot.event
@@ -514,29 +524,43 @@ async def on_message(message):
 
     if aiOn and message.author.id != bot.user.id:
 
-        aiUserID = message.author.id
+        if aiOn and message.author.id in userSession:
+            aiUserID = message.author.id
 
-        if aiUserID in userSession:
             userSession[aiUserID].append({"role": "user", "content": message.content})
 
-            try:
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=userSession[aiUserID],
-                    max_tokens=150,
-                    temperature=0.7
-                )
+            history = ""
+            for msg in userSession[aiUserID]:
+                history += f"{msg['role']}: {msg['content']}\n"
 
-                reply = response.choices[0].message.content.strip()
+            try:
+                resp = requests.post(
+                    API,
+                    headers=HEADERS,
+                    json={"inputs": history}
+                )
+                resp.raise_for_status()
+                data = resp.json()
+
+                if isinstance(data, dict) and "generated_text" in data:
+                    reply = data["generated_text"]
+                elif isinstance(data, list) and "generated_text" in data[0]:
+                    reply = data[0]["generated_text"]
+                else:
+                    reply = "Sorry, I couldn't understand the response."
+            except requests.exceptions.RequestException as e:
+                reply = "There was an error connecting to the AI service."
+                print(f"Request error: {e}")
+            except Exception as e:
+                reply = "An unexpected error occurred."
+                print(f"Unexpected error: {e}")
+
                 userSession[aiUserID].append({"role": "assistant", "content": reply})
                 await message.channel.send(reply)
 
             except Exception as e:
                 await message.channel.send("Something went wrong.")
                 print(e)
-
-        await bot.process_commands(message)
-
 
 
 
@@ -982,24 +1006,28 @@ async def randomFact(interaction: discord.Interaction):
 
 @bot.tree.command(name='open-chat')
 async def aiChat(interaction: discord.Interaction, *, prompt: str):
-
-    aiUserID = interaction.user.id
-    userSession[aiUserID] = [{'role': 'user', 'content': prompt}]
     global aiOn
+    aiUserID = interaction.user.id
     aiOn = True
 
 
-    try:
-        aiResponse = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=userSession[aiUserID],
-            max_tokens=150,
-            temperature=0.7
-        )
+    userSession[aiUserID] = prompt
 
-        reply = aiResponse.choices[0].message.content.strip()
-        userSession[aiUserID].append({'role': 'assistant', 'content': reply})
-        await interaction.followup.send(f'Chat started. \n{reply}')
+    try:
+        response = requests.post(API, headers=HEADERS, json={"inputs": prompt})
+
+        if response.status_code != 200:
+            raise Exception(f"API error: {response.text}")
+
+        data = response.json()
+        if isinstance(data, dict) and "generated_text" in data:
+            reply = data["generated_text"]
+        elif isinstance(data, list) and "generated_text" in data[0]:
+            reply = data[0]["generated_text"]
+        else:
+            reply = "Sorry, I couldn't understand the response."
+
+        await interaction.response.send_message(f"Chat started.\n{reply}")
 
     except Exception as e:
         await interaction.response.send_message('Whoops! Error!')
@@ -1007,7 +1035,6 @@ async def aiChat(interaction: discord.Interaction, *, prompt: str):
 
 @bot.tree.command(name='close-chat')
 async def closeAI(interaction: discord.Interaction):
-
     global aiOn
     aiOn = False
     await interaction.response.send_message('AI has been turned off. :(')
