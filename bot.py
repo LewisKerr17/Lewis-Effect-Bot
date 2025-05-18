@@ -107,7 +107,11 @@ async def on_message(message):
 
     #Inger
     if suffixOn and message.author.id != bot.user.id:
-        await message.channel.send(message.content + random.choice(suffix))
+
+        words = message.content.split()
+        suffixed = [word + random.choice(suffix) for word in words]
+        suffixed = ' '.join(suffixed)
+        await message.channel.send(suffixed)
 
     #guessTheNum
     if guessTheNumOn and message.author.id != bot.user.id:
@@ -136,7 +140,7 @@ async def on_message(message):
                 await message.channel.send('I won!')
                 rpsOn = False
             
-            elif userRpsGuess == rpsChoices[0] and botChoice == rpsChoices[2] or userRpsGuess == rpsChoices[2] and botChoice == rpsChoices[1]:
+            elif userRpsGuess == rpsChoices[0] and botChoice == rpsChoices[2] or userRpsGuess == rpsChoices[2] and botChoice == rpsChoices[1] or userRpsGuess == rpsChoices[1] and botChoice == rpsChoices[0]:
                 await message.channel.send('I lost!')
                 rpsOn = False
 
