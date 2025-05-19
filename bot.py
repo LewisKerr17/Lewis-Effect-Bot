@@ -16,6 +16,8 @@ import randfacts
 import math
 import requests
 import aiohttp
+from dadjokes import Dadjoke
+import ast
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -34,6 +36,8 @@ HEADERS = {
     "Authorization": f"Bearer {huggingFaceToken}"
 }
 API = "https://api-inference.huggingface.co/google/flan-t5-base"
+global secretWords
+secretWords = ast.literal_eval(os.getenv("SECRET_WORD"))
 
 
 
@@ -71,6 +75,7 @@ rangeGuess = False
 suitGuess = False
 cardsCalled = []
 aiOn = False
+totalCount = 0
 
 def startBus():
     global colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled
@@ -84,11 +89,45 @@ answers = ['yes', 'no', 'ask your mother', 'definitely', 'that is absolutely tru
 
 @bot.event
 async def on_message(message):
-    global effect, question, question_user_id, measure, suffixOn, timerOn, guessTheNumOn, gptQuestion, messages, rpsOn, diceNumbers, dice, rouletteOn, busOn, colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled, aiOn
+    global effect, question, question_user_id, measure, suffixOn, timerOn, guessTheNumOn, gptQuestion, messages, rpsOn, diceNumbers, dice, rouletteOn, busOn, colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled, aiOn, totalCount
 
     if message.author.bot:
         return
     
+    if message.author.id != bot.user.id:
+        words = message.content.split()
+        if secretWords:
+            secretWordList = [w.strip().lower() for w in secretWords]
+            for word in words:
+                if word.lower() in secretWordList:
+                    print(f"Secret word '{word}' found!")
+                    fieldNamesWord = ['Name', 'TotalCount']
+                    usernameWord = message.author.name
+                    updatedWord = False
+                    if os.path.exists('word.csv'):
+                        with open('word.csv', 'r', newline='') as csvfile:
+                            reader = csv.DictReader(csvfile, fieldnames=fieldNamesWord)
+                            data = list(reader)
+                    else:
+                        data = []
+
+                    for row in data:
+                        if row['Name'] == usernameWord:
+                            row['TotalCount'] = str(int(row['TotalCount']) + 1)
+                            updatedWord = True
+                            totalCount = int(row['TotalCount'])
+                            break
+
+                    if not updatedWord:
+                        totalCount = 1
+                        data.append({'Name': usernameWord, 'TotalCount': str(totalCount)})
+
+                    with open('word.csv', 'w', newline='') as csvfile:
+                        writer = csv.DictWriter(csvfile, fieldnames=fieldNamesWord)
+                        writer.writerows(data)
+
+                    print(f'Count for {usernameWord}: {totalCount}')
+
     #lewisEffect
     if effect and message.author.id != bot.user.id:
         await message.channel.send(random.choice(adjectives) + " " + message.content)
@@ -520,9 +559,8 @@ async def on_message(message):
                 else:
                     await message.channel.send(f'{busColour} {busNum} - Incorrect!')
                     busOn = False
-            
 
-    
+
 
     #AIChat
 
@@ -1001,10 +1039,26 @@ async def roulette(interaction: discord.Interaction):
     else:
         await interaction.followup.send('You dont have any tokens! Play something to get some!')
 
+@bot.tree.command(name='secret-word-count')
+async def secretWordCount(interaction: discord.Interaction):
+    with open('word.csv', 'r', newline='') as csvfile:
+        csv_reader = csv.reader(csvfile)
+        wordMessage = ''
+        for row in csv_reader:
+            wordMessage += f' has said one of {str(secretWords[:3])} '.join(row) + ' times.' + '\n'
+        if wordMessage:
+            await interaction.response.send_message(wordMessage)
+
+
 @bot.tree.command(name='random-fact')
 async def randomFact(interaction: discord.Interaction):
     randomFactFinal = randfacts.get_fact()
     await interaction.response.send_message(randomFactFinal)
+
+@bot.tree.command(name='dad-joke')
+async def dadJoke(interaction: discord.Interaction):
+    dadJokeFinal = Dadjoke()
+    await interaction.response.send_message(dadJokeFinal.joke)
 
 
 
