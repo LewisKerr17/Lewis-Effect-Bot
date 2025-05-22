@@ -924,14 +924,16 @@ async def bigBen(interaction: discord.Interaction):
 
 
 #espressooooooooooo
-@bot.tree.command(name='espresso', description='Joins VC to play espresso!')
+@bot.tree.command(name='sabrina', description='Joins VC to play sabriner!')
 async def espresso(interaction: discord.Interaction):
     if interaction.user.voice:
         voice_channel = interaction.user.voice.channel
         voice_client = await voice_channel.connect()
 
         try:
-            source = FFmpegPCMAudio('C:/Users/lewis/Downloads/espresso.mp3')
+            songs = ['C:/Users/lewis/Downloads/espresso.mp3', 'C:/Users/Lewis/Downloads/pleasepleaseplease.mp3', 'C:/Users/Lewis/Downloads/taste.mp3', 'C:/Users/Lewis/Downloads/feather.mp3']
+            voiceSong = random.choice(songs)
+            source = FFmpegPCMAudio(voiceSong)
             voice_client.play(source, after=lambda e: print(f'Playback finished: {e}' if e else 'Playback finished.'))
 
             while voice_client.is_playing():
