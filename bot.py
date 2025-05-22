@@ -501,9 +501,10 @@ async def on_message(message):
                 await message.channel.send(f'{actualColour} {actualNum} - Incorrect!')
                 busOn = False
 
-        
-        elif valueGuess:
-            userValueGuess = message.content.lower()
+        def checkVal(msg):
+            return msg.author.id == message.author.id and msg.channel.id == message.channel.id and msg.content.lower() in ['higher', 'lower']
+        if valueGuess:
+            userValueGuess = await bot.wait_for('message', check=checkVal, timeout=60.0)
             firstCard = cardsCalled[0]
             busCards()
             secondNum = busNum
@@ -512,6 +513,7 @@ async def on_message(message):
             print(f'first = {firstCard}, second = {secondNum}, guess = {userValueGuess}')
 
             if userValueGuess == 'higher':
+                print(userValueGuess)
                 if secondNum > firstCard:
                     await message.channel.send(f'{secondColour} {secondNum} - Correct!')
                     await message.channel.send('Between these values or outwith these values?')
@@ -520,9 +522,10 @@ async def on_message(message):
                     rangeGuess = True
                 else:
                     await message.channel.send(f'{secondColour} {secondNum} - Incorrect!')
+                    print(userValueGuess)
                     busOn = False
-            
             elif userValueGuess == 'lower':
+                print(userValueGuess)
                 if secondNum < firstCard:
                     await message.channel.send(f'{secondColour} {secondNum} - Correct!')
                     await message.channel.send('Between these values or outwith these values?')
@@ -531,8 +534,15 @@ async def on_message(message):
                     rangeGuess = True
                 else:
                     await message.channel.send(f'{secondColour} {secondNum} - Incorrect!')
+                    print(userValueGuess)
                     busOn = False
+            else:
+                await message.channel.send("Invalid input! Please respond with 'higher' or 'lower'.")
+                busOn = False
 
+        else:
+            await message.channel.send("Invalid input! Please respond with 'higher' or 'lower'.")
+            busOn = False
 
         if rangeGuess:
             userRangeGuess = message.content.lower()
