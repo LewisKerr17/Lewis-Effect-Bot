@@ -1057,7 +1057,7 @@ async def secretWordCount(interaction: discord.Interaction):
         csv_reader = csv.reader(csvfile)
         wordMessage = ''
         for row in csv_reader:
-            wordMessage += f' has said one of {str(secretWords[:3])} '.join(row) + ' times.' + '\n'
+            wordMessage += f' has said one of {str(secretWords)} '.join(row) + ' times.' + '\n'
         if wordMessage:
             await interaction.response.send_message(wordMessage)
 
