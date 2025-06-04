@@ -907,6 +907,18 @@ async def bigBenAUTO():
                 if voice_client.is_connected():
                     await voice_client.disconnect()
 
+@bot.tree.command(name='set-birthday', description='add your birthday and I will remind you when it is')
+async def birthday(interaction: discord.Interaction):
+
+    global birthdays
+    birthdays = []
+
+@tasks.loop(hours=24)
+async def birthdayCheck(interaction: discord.Interaction):
+    currentDay = datetime.now().strftime("%D:%M")
+
+    if currentDay in birthdays:
+        interaction.response.send_message('Happy birthday!')
 
 
 
@@ -922,7 +934,7 @@ async def bigBen(interaction: discord.Interaction):
             voice_client.play(source, after=lambda e: print(f'Playback finished: {e}' if e else 'Playback finished.'))
             
             while voice_client.is_playing():
-                    await asyncio.sleep(1) 
+                await asyncio.sleep(1) 
             
             await voice_client.disconnect()
         except Exception as e:
