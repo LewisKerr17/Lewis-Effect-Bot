@@ -966,7 +966,22 @@ async def birthdayCheck():
                     else:
                         await channel.send(f"Happy Birthday {username}! 🎉")
 
+@bot.tree.command(name='birthday-dates', description='List of all saved birthdays')
+async def birthday_dates(interaction: discord.Interaction):
+    fieldnames = ['Name', 'Birthday']
+    if not os.path.exists('birthdays.csv'):
+        await interaction.response.send_message("No birthdays found.")
+        return
 
+    with open('birthdays.csv', 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile, fieldnames=fieldnames)
+        birthdays = [f"{row['Name']}: {row['Birthday']}" for row in reader if row['Name'] and row['Birthday']]
+
+    if birthdays:
+        birthdayList = "Saved birthdays:\n" + "\n".join(birthdays)
+    else:
+        birthdayList = "No birthdays found NOOOOOOOOOOOO"
+    await interaction.response.send_message(birthdayList)
 
 #MANUAL big ben
 @bot.tree.command(name='big-ben', description='Big Ben.')
