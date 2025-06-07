@@ -939,7 +939,7 @@ async def birthday(interaction: discord.Interaction, *, prompt: str):
 
     await interaction.response.send_message(f"Birthday for {username} set to {birthday_str}!")
 
-@tasks.loop(hours=24)
+@tasks.loop(hours=1)
 async def birthdayCheck():
 
     channel_id = 947902507437391924
