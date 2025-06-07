@@ -908,17 +908,63 @@ async def bigBenAUTO():
                     await voice_client.disconnect()
 
 @bot.tree.command(name='set-birthday', description='add your birthday and I will remind you when it is')
-async def birthday(interaction: discord.Interaction):
+async def birthday(interaction: discord.Interaction, *, prompt: str):
 
-    global birthdays
-    birthdays = []
+    fieldnames = ['Name', 'Birthday']
+    username = interaction.user.name
+    birthday_str = prompt.strip()
+    updated = False
+
+
+    if os.path.exists('birthdays.csv'):
+        with open('birthdays.csv', 'r', newline='') as csvfile:
+            reader = csv.DictReader(csvfile, fieldnames=fieldnames)
+            data = list(reader)
+    else:
+        data = []
+
+    for row in data:
+        if row['Name'] == username:
+            row['Birthday'] = birthday_str
+            updated = True
+            break
+
+    if not updated:
+        data.append({'Name': username, 'Birthday': birthday_str})
+
+    # Write back to file
+    with open('birthdays.csv', 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writerows(data)
+
+    await interaction.response.send_message(f"Birthday for {username} set to {birthday_str}!")
 
 @tasks.loop(hours=24)
-async def birthdayCheck(interaction: discord.Interaction):
-    currentDay = datetime.now().strftime("%D:%M")
+async def birthdayCheck():
 
-    if currentDay in birthdays:
-        interaction.response.send_message('Happy birthday!')
+    channel_id = 947902507437391924
+    channel = bot.get_channel(channel_id)
+    if channel is None:
+        print("Birthday channel not found.")
+        return
+
+    today = datetime.now().strftime("%d/%m")
+    fieldnames = ['Name', 'Birthday']
+
+    if os.path.exists('birthdays.csv'):
+        with open('birthdays.csv', 'r', newline='') as csvfile:
+            reader = csv.DictReader(csvfile, fieldnames=fieldnames)
+            for row in reader:
+                username = row['Name']
+                birthday_str = row['Birthday'].strip()
+                if birthday_str[:5] == today:
+                    for guild in bot.guilds:
+                        member = discord.utils.get(guild.members, name=username)
+                        if member:
+                            await channel.send(f"Happy Birthday {member.mention}! 🎉")
+                            break
+                    else:
+                        await channel.send(f"Happy Birthday {username}! 🎉")
 
 
 
