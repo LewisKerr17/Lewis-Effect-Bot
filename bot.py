@@ -9,7 +9,7 @@ import random
 import os
 from dotenv import load_dotenv 
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from quote import quote
 import csv
 import randfacts
@@ -76,6 +76,7 @@ suitGuess = False
 cardsCalled = []
 aiOn = False
 totalCount = 0
+guessTheNumTarget = None  # Store the target number for the guessing game
 
 def startBus():
     global colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled
@@ -152,20 +153,42 @@ async def on_message(message):
         suffixed = ' '.join(suffixed)
         await message.channel.send(suffixed)
 
-    #guessTheNum
     if guessTheNumOn and message.author.id != bot.user.id:
-        userGuess = int(message.content.lower())
-        randomNum = random.randint(0, 40)
+        
+        global guessTheNumTarget, timerOn
 
-        while timerOn:
-            if userGuess == randomNum:
+        
+        if guessTheNumTarget is None:
+            guessTheNumTarget = random.randint(1, 40)
+            print(f"Target number for guessing game: {guessTheNumTarget}")
+
+            async def guess_timer(channel):
+                global timerOn, guessTheNumOn, guessTheNumTarget
+                await asyncio.sleep(20)
+                if guessTheNumOn:
+                    await channel.send(f'You lose! The number was {guessTheNumTarget}')
+                    guessTheNumOn = False
+                    timerOn = False
+                    guessTheNumTarget = None
+
+            if not timerOn:
+                timerOn = True
+                bot.loop.create_task(guess_timer(message.channel))
+
+        try:
+            userGuess = int(message.content.strip())
+        except ValueError:
+            await message.channel.send('Please enter a valid number!')
+            return
+
+        if timerOn and guessTheNumOn:
+            if userGuess == guessTheNumTarget:
                 await message.channel.send('Congrats, you win!')
-                guessTheNumOn  = False
+                guessTheNumOn = False
                 timerOn = False
-            else: 
-                await print(userGuess)
-        await message.channel.send(f'You lose! The number was {randomNum}')
-        guessTheNumOn  = False
+                guessTheNumTarget = None
+            else:
+                await message.channel.send('Wrong guess, try again!')
 
     if rpsOn and message.author.id != bot.user.id:
         userRpsGuess = message.content.lower()
@@ -827,42 +850,32 @@ suffix = ['ing', 'nd' 'st', 'rd', 'th', 'ed', 'ily', 's', 'ist' 'ance', 'ible', 
 @bot.tree.command(name='inger-on', description='adds random things onto the end of every message (eg ing)')
 async def inger(interaction: discord.Interaction):
     await interaction.response.send_message('I will now take every single message and add something to the end yk')
-    global suffixOn
-    suffixOn = True
-
-@bot.tree.command(name='inger-off', description='turn inger OFF')
-async def ingerOff(interaction: discord.Interaction):
-    await interaction.response.send_message('NUH UH ITS OFF NOOOOOOO')
-    global suffixOn
-    suffixOn = False
-
 
 
 
 @bot.tree.command(name='guess-the-num', description='Guess the number! (BROKEN)')
 async def guessTheNum(interaction: discord.Interaction):
-    global guessTheNumOn, timerOn
-    guessTheNumOn = True 
-    await interaction.response.send_message('RULES: \nThe player will have 20 seconds to guess the right number (between 1 - 40)\nYour time begins in 3 seconds')
-    time.sleep(3)
+    global guessTheNumOn, timerOn, guessTheNumTarget
+    guessTheNumOn = True
+    guessTheNumTarget = None
+    await interaction.response.send_message(
+        'RULES: \nThe player will have 20 seconds to guess the right number (between 1 - 40)\nYour time begins in 3 seconds'
+    )
+    await asyncio.sleep(3)
     timerOn = True
     await interaction.followup.send('go go go!')
-    
-    
-    async def timer():
-        global timerOn
-        s = 25
-        while s > 0:
-            timer = datetime.timedelta(seconds = s)
-            print(timer)
-            time.sleep(1)
-            s -= 1
-        print('balls')
-        timerOn = False
 
-    if timerOn:
-        await timer()
+    async def timer(channel):
+        global timerOn, guessTheNumOn, guessTheNumTarget
+        await asyncio.sleep(20)
+        if guessTheNumOn:
+            await channel.send(f'Time is up! The number was {guessTheNumTarget}')
+            guessTheNumOn = False
+            timerOn = False
+            guessTheNumTarget = None
 
+
+    bot.loop.create_task(timer(interaction.channel))
 
 
 #AUTO big ben
