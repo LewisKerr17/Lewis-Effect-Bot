@@ -853,7 +853,7 @@ async def inger(interaction: discord.Interaction):
 
 
 
-@bot.tree.command(name='guess-the-num', description='Guess the number! (BROKEN)')
+@bot.tree.command(name='guess-the-num', description='Guess the number!')
 async def guessTheNum(interaction: discord.Interaction):
     global guessTheNumOn, timerOn, guessTheNumTarget
     guessTheNumOn = True
@@ -919,6 +919,27 @@ async def bigBenAUTO():
                 print(f'Error: {e}')
                 if voice_client.is_connected():
                     await voice_client.disconnect()
+
+@bot.tree.command(name='random-message', description='find a random message in the server and quotes it')
+async def randomMessage(interaction: discord.Interaction):
+    
+    channel_id = 856907265420034078
+    channel = interaction.guild.get_channel(channel_id)
+
+    days = random.randint(1, 1615)
+    randomTime = datetime.utcnow() - timedelta(days=days)
+
+    messages = [msg async for msg in channel.history(limit = 100, after=randomTime)]
+    if not messages:
+        await interaction.response.send_message('No messages were found.')
+        return
+    
+    randomMessage = random.choice(messages)
+    sender = randomMessage.author.display_name if hasattr(randomMessage.author, 'display_name') else randomMessage.author.name
+    content = randomMessage.content
+
+    await interaction.response.send_message(f'"{content}"\n- {sender}, {days} days ago')
+
 
 @bot.tree.command(name='set-birthday', description='add your birthday and I will remind you when it is')
 async def birthday(interaction: discord.Interaction, *, prompt: str):
