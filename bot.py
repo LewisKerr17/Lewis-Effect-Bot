@@ -78,6 +78,7 @@ aiOn = False
 totalCount = 0
 guessTheNumTarget = None
 donationOpen = False
+donationSessions = {}
 
 def startBus():
     global colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled
@@ -597,53 +598,59 @@ async def on_message(message):
 
 
     #donation
-    if donationOpen and message.author.id != bot.user.id:
-        fieldNames = ['Name', 'Tokens']
-        username = message.content.strip()
-        donorName = message.author.name
+    if message.author.id in donationSessions and message.author.id != bot.user.id:
 
-        with open('stats.csv', 'r') as csvfile:
-                reader = csv.DictReader(csvfile, fieldnames=fieldNames)
-                data = list(reader)
-
-        recipientRow = None
-        donorRow = None
-        for row in data:
-            if row['Name'] == username:
-                recipientRow = row
-            if row['Name'] == donorName:
-                donorRow = row
+        userID = message.author.id
+        if userID not in donationSessions:
+            donationSessions[userID] = True
+        if userID in donationSessions:
         
-        if recipientRow and donorRow:
-            await message.channel.send(f'How much do you want to donate to {username}?')
+            fieldNames = ['Name', 'Tokens']
+            username = message.content.strip()
+            donorName = message.author.name
+
+            with open('stats.csv', 'r') as csvfile:
+                    reader = csv.DictReader(csvfile, fieldnames=fieldNames)
+                    data = list(reader)
+
+            recipientRow = None
+            donorRow = None
+            for row in data:
+                if row['Name'] == username:
+                    recipientRow = row
+                if row['Name'] == donorName:
+                    donorRow = row
             
-            def check(m):
-                return m.author.id == message.author.id and m.channel == message.channel and m.content.isdigit()
-            try:
-                amount = await bot.wait_for('message', check=check, timeout=30.0) #rushemmfs
-            except asyncio.TimeoutError:
-                await message.channel.send('Donation timed out!')
-                return
+            if recipientRow and donorRow:
+                await message.channel.send(f'How much do you want to donate to {username}?')
                 
-            donationAmount = int(amount.content)
-            donorTokens = int(donorRow['Tokens'])
-            recipientTokens = int(recipientRow['Tokens'])
-                
-            if donorTokens >= donationAmount and donationAmount > 0:
+                def check(m):
+                    return m.author.id == message.author.id and m.channel == message.channel and m.content.isdigit()
+                try:
+                    amount = await bot.wait_for('message', check=check, timeout=30.0) #rushemmfs
+                except asyncio.TimeoutError:
+                    await message.channel.send('Donation timed out!')
+                    return
+                    
+                donationAmount = int(amount.content)
+                donorTokens = int(donorRow['Tokens'])
+                recipientTokens = int(recipientRow['Tokens'])
+                    
+                if donorTokens >= donationAmount and donationAmount > 0:
 
-                donorRow['Tokens'] = str(donorTokens - donationAmount)
-                recipientRow['Tokens'] = str(recipientTokens + donationAmount)
+                    donorRow['Tokens'] = str(donorTokens - donationAmount)
+                    recipientRow['Tokens'] = str(recipientTokens + donationAmount)
 
-                with open('stats.csv', 'w', newline='') as csvfile:
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldNames)
-                    writer.writerows(data)
+                    with open('stats.csv', 'w', newline='') as csvfile:
+                        writer = csv.DictWriter(csvfile, fieldnames=fieldNames)
+                        writer.writerows(data)
 
-                await message.channel.send(f'You donated {donationAmount} tokens to {username}!')
-                donationOpen = False
+                    await message.channel.send(f'You donated {donationAmount} tokens to {username}!')
 
-            else:
-                await message.channel.send(f'You do not have enough tokens to donate this amount. Please try a smaller amount.')
-                donationOpen = False
+                else:
+                    await message.channel.send(f'You do not have enough tokens to donate this amount. Please try a smaller amount.')
+
+            donationSessions.pop(userID, None)
 
 
 
@@ -1193,9 +1200,9 @@ async def dadJoke(interaction: discord.Interaction):
 async def donateTokens(interaction: discord.Interaction):
     fieldNames = ['Name', 'Tokens']
     nameFound = False
-    global donationOpen
-    donationOpen = False
+    global donationSessions
     username = interaction.user.name
+    userID = interaction.user.id
     with open('stats.csv', 'r') as csvfile:
             reader = csv.DictReader(csvfile, fieldnames=fieldNames)
             data = list(reader)
@@ -1208,6 +1215,7 @@ async def donateTokens(interaction: discord.Interaction):
     if nameFound:
         await interaction.response.send_message(f'{interaction.user.name}, you have {str(row['Tokens'])} tokens, put the name of the user you would like to donate to.')
         donationOpen = True
+        donationSessions[userID] = True
     else:  
         await interaction.followup.send('You dont have any tokens! Play something to get some!')
 
