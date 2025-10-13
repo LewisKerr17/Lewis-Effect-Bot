@@ -76,7 +76,8 @@ suitGuess = False
 cardsCalled = []
 aiOn = False
 totalCount = 0
-guessTheNumTarget = None  # Store the target number for the guessing game
+guessTheNumTarget = None
+donationOpen = False
 
 def startBus():
     global colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled
@@ -85,7 +86,7 @@ def startBus():
     rangeGuess = False
     suitGuess = False
     cardsCalled = []
-answers = ['yes', 'no', 'ask your mother', 'definitely', 'that is absolutely true', 'very no', 'absolutely not', 'not at all true', 'that is false', 'I do not care', 'this is not my business', 'and why is that my problem?', 'get raph to answer this idk', 'just because im an 8ball doesnt mean i can fix all of your problems', 'why?', 'who?', 'how?', 'how does society accept this at all?', 'elon musk might have something to say about that', 'come out already', 'this is so not right', 'nuh uh', 'yuh huh', 'perchance...']
+answers = ['yes', 'no', 'definitely', 'that is absolutely true', 'very no', 'absolutely not', 'not at all true', 'that is false', 'why?', 'who?', 'how?', 'come out already', 'this is so not right', 'nuh uh', 'yuh huh', 'perchance...']
 ## ON MESSAGE ###
 
 @bot.event
@@ -595,47 +596,55 @@ async def on_message(message):
 
 
 
-    #AIChat
+    #donation
+    if donationOpen and message.author.id != bot.user.id:
+        fieldNames = ['Name', 'Tokens']
+        username = message.content.strip()
+        donorName = message.author.name
 
-    if aiOn and message.author.id != bot.user.id:
+        with open('stats.csv', 'r') as csvfile:
+                reader = csv.DictReader(csvfile, fieldnames=fieldNames)
+                data = list(reader)
 
-        if aiOn and message.author.id in userSession:
-            aiUserID = message.author.id
-
-            userSession[aiUserID].append({"role": "user", "content": message.content})
-
-            history = ""
-            for msg in userSession[aiUserID]:
-                history += f"{msg['role']}: {msg['content']}\n"
-
+        recipientRow = None
+        donorRow = None
+        for row in data:
+            if row['Name'] == username:
+                recipientRow = row
+            if row['Name'] == donorName:
+                donorRow = row
+        
+        if recipientRow and donorRow:
+            await message.channel.send(f'How much do you want to donate to {username}?')
+            
+            def check(m):
+                return m.author.id == message.author.id and m.channel == message.channel and m.content.isdigit()
             try:
-                resp = requests.post(
-                    API,
-                    headers=HEADERS,
-                    json={"inputs": history}
-                )
-                resp.raise_for_status()
-                data = resp.json()
+                amount = await bot.wait_for('message', check=check, timeout=30.0) #rushemmfs
+            except asyncio.TimeoutError:
+                await message.channel.send('Donation timed out!')
+                return
+                
+            donationAmount = int(amount.content)
+            donorTokens = int(donorRow['Tokens'])
+            recipientTokens = int(recipientRow['Tokens'])
+                
+            if donorTokens >= donationAmount and donationAmount > 0:
 
-                if isinstance(data, dict) and "generated_text" in data:
-                    reply = data["generated_text"]
-                elif isinstance(data, list) and "generated_text" in data[0]:
-                    reply = data[0]["generated_text"]
-                else:
-                    reply = "Sorry, I couldn't understand the response."
-            except requests.exceptions.RequestException as e:
-                reply = "There was an error connecting to the AI service."
-                print(f"Request error: {e}")
-            except Exception as e:
-                reply = "An unexpected error occurred."
-                print(f"Unexpected error: {e}")
+                donorRow['Tokens'] = str(donorTokens - donationAmount)
+                recipientRow['Tokens'] = str(recipientTokens + donationAmount)
 
-                userSession[aiUserID].append({"role": "assistant", "content": reply})
-                await message.channel.send(reply)
+                with open('stats.csv', 'w', newline='') as csvfile:
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldNames)
+                    writer.writerows(data)
 
-            except Exception as e:
-                await message.channel.send("Something went wrong.")
-                print(e)
+                await message.channel.send(f'You donated {donationAmount} tokens to {username}!')
+                donationOpen = False
+
+            else:
+                await message.channel.send(f'You do not have enough tokens to donate this amount. Please try a smaller amount.')
+                donationOpen = False
+
 
 
 
@@ -973,7 +982,7 @@ async def birthday(interaction: discord.Interaction, *, prompt: str):
 
     await interaction.response.send_message(f"Birthday for {username} set to {birthday_str}!")
 
-@tasks.loop(hours=1)
+@tasks.loop(minutes=1)
 async def birthdayCheck():
 
     channel_id = 947902507437391924
@@ -1180,41 +1189,27 @@ async def dadJoke(interaction: discord.Interaction):
     await interaction.response.send_message(dadJokeFinal.joke)
 
 
+@bot.tree.command(name='donate')
+async def donateTokens(interaction: discord.Interaction):
+    fieldNames = ['Name', 'Tokens']
+    nameFound = False
+    global donationOpen
+    donationOpen = False
+    username = interaction.user.name
+    with open('stats.csv', 'r') as csvfile:
+            reader = csv.DictReader(csvfile, fieldnames=fieldNames)
+            data = list(reader)
 
-@bot.tree.command(name='open-chat')
-async def aiChat(interaction: discord.Interaction, *, prompt: str):
-    global aiOn
-    aiUserID = interaction.user.id
-    aiOn = True
+    for row in data:
+        if row['Name'] == username:
+            nameFound = True
+            break
 
-
-    userSession[aiUserID] = prompt
-
-    try:
-        response = requests.post(API, headers=HEADERS, json={"inputs": prompt})
-
-        if response.status_code != 200:
-            raise Exception(f"API error: {response.text}")
-
-        data = response.json()
-        if isinstance(data, dict) and "generated_text" in data:
-            reply = data["generated_text"]
-        elif isinstance(data, list) and "generated_text" in data[0]:
-            reply = data[0]["generated_text"]
-        else:
-            reply = "Sorry, I couldn't understand the response."
-
-        await interaction.response.send_message(f"Chat started.\n{reply}")
-
-    except Exception as e:
-        await interaction.response.send_message('Whoops! Error!')
-        print(e)
-
-@bot.tree.command(name='close-chat')
-async def closeAI(interaction: discord.Interaction):
-    global aiOn
-    aiOn = False
-    await interaction.response.send_message('AI has been turned off. :(')
+    if nameFound:
+        await interaction.response.send_message(f'{interaction.user.name}, you have {str(row['Tokens'])} tokens, put the name of the user you would like to donate to.')
+        donationOpen = True
+    else:  
+        await interaction.followup.send('You dont have any tokens! Play something to get some!')
 
 
 bot.run(TOKEN)
