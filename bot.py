@@ -2,7 +2,6 @@ import asyncio
 from asyncio import tasks
 import discord
 from discord.ext import tasks
-import openai
 from discord import FFmpegPCMAudio, app_commands
 from discord.ext import commands
 import random
@@ -15,31 +14,23 @@ import csv
 import randfacts
 import math
 import requests
+import json
 import aiohttp
 from dadjokes import Dadjoke
 import ast
+import ollama
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
-openai.api_key = os.getenv('API_KEY')
-
-
 CHANNEL_ID = 947902507437391924
 # client = commands.Bot(command_prefix="!", intents=discord.Intents.all()) 
 # tree = app_commands.CommandTree(client)
 
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all(), case_insensitive=True)
-
-userSession = {}
-huggingFaceToken = os.getenv("HUGGINGFACE_TOKEN")
-HEADERS = {
-    "Authorization": f"Bearer {huggingFaceToken}"
-}
-API = "https://api-inference.huggingface.co/google/flan-t5-base"
 global secretWords
 secretWords = ast.literal_eval(os.getenv("SECRET_WORD"))
 
-
+conversations = {}
 
 
 
@@ -48,6 +39,7 @@ async def on_ready():
     print("im ready")
     bigBenAUTO.start()
     quoteOfTheDay.start()
+    birthdayCheck.start()
     await bot.tree.sync()
     channel = bot.get_channel(CHANNEL_ID)
 
@@ -79,6 +71,7 @@ totalCount = 0
 guessTheNumTarget = None
 donationOpen = False
 donationSessions = {}
+chatOpen = False
 
 def startBus():
     global colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled
@@ -93,6 +86,8 @@ answers = ['yes', 'no', 'definitely', 'that is absolutely true', 'very no', 'abs
 @bot.event
 async def on_message(message):
     global effect, question, question_user_id, measure, suffixOn, timerOn, guessTheNumOn, gptQuestion, messages, rpsOn, diceNumbers, dice, rouletteOn, busOn, colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled, aiOn, totalCount
+
+    channelID = message.channel.id
 
     if message.author.bot:
         return
@@ -653,6 +648,26 @@ async def on_message(message):
             donationSessions.pop(userID, None)
 
 
+    #ai chat
+    if chatOpen and message.author.id != bot.user.id:
+
+        conversations[channelID].append({'role': 'user', 'content': message.content})
+
+    response = requests.post(
+        'http://localhost:11434/api/chat',
+        json = {
+            'model': 'lewai',
+            'messages': conversations[channelID],
+            'stream': False
+        }
+    )
+
+    data = response.json()
+    aiResponse = data.get('message', {}).get('content', 'no response')
+
+    conversations[channelID].append({'role': 'assistant', 'content': aiResponse})
+    await message.channel.send(aiResponse)
+    await bot.process_command(message)
 
 
 
@@ -954,6 +969,13 @@ async def randomMessage(interaction: discord.Interaction):
     sender = randomMessage.author.display_name if hasattr(randomMessage.author, 'display_name') else randomMessage.author.name
     content = randomMessage.content
 
+    attempts = 0
+    while (not content) and attempts < 5:
+        randomMessage = random.choice(messages)
+        sender = randomMessage.author.display_name if hasattr(randomMessage.author, 'display_name') else randomMessage.author.name
+        content = randomMessage.content
+        attempts += 1
+
     await interaction.response.send_message(f'"{content}"\n- {sender}, {days} days ago')
 
 
@@ -989,10 +1011,10 @@ async def birthday(interaction: discord.Interaction, *, prompt: str):
 
     await interaction.response.send_message(f"Birthday for {username} set to {birthday_str}!")
 
-@tasks.loop(minutes=1)
+@tasks.loop(hours=1)
 async def birthdayCheck():
 
-    channel_id = 947902507437391924
+    channel_id = 856907265420034078
     channel = bot.get_channel(channel_id)
     if channel is None:
         print("Birthday channel not found.")
@@ -1080,6 +1102,27 @@ async def espresso(interaction: discord.Interaction):
             await interaction.response.send_message('lemesso')
 
 
+@bot.tree.command(name='motivation')
+async def motivation(interaction: discord.Interaction):
+    if interaction.user.voice:
+        voice_channel = interaction.user.voice.channel
+        voice_client = await voice_channel.connect()
+
+        try:
+            songs = ['C:/Users/lewis/Downloads/motivation.mp3']
+            voiceSong = random.choice(songs)
+            source = FFmpegPCMAudio(voiceSong)
+            voice_client.play(source, after=lambda e: print(f'Playback doneeeeee: {e}' if e else 'playback finished VBORORO'))
+
+            while voice_client.is_playing():
+                await asyncio.sleep(1)
+
+            await asyncio.sleep(1)
+            await voice_client.disconnect()
+        except Exception as e:
+            print(f'Error: {e}')
+            if voice_client and voice_client.is_connected():
+                await voice_client.disconnect()
 
 @bot.tree.command(name='random-quote')
 async def randomQuote(interaction: discord.Interaction):
@@ -1219,6 +1262,33 @@ async def donateTokens(interaction: discord.Interaction):
     else:  
         await interaction.followup.send('You dont have any tokens! Play something to get some!')
 
+
+@bot.tree.command(name='start-chat', description='Talk to me bru')
+async def startChat(interaction: discord.Interaction):
+    global chatOpen
+    chatOpen = True
+    channelID = interaction.channel_id
+
+    if channelID in conversations:
+        await interaction.response.send_message('Sorry, there is currently a chat open in this channel. IDIOT.')
+        return
+    
+    conversations[channelID] = []
+    await interaction.response.send_message('Hello')
+
+
+@bot.tree.command(name='end-chat', description='Dont talk to me bru')
+async def endChat(interaction: discord.Interaction):
+    global chatOpen
+    chatOpen = False
+    channelID = interaction.channel_id
+
+    if channelID not in conversations:
+        await interaction.reseponse.send_message('No active chat open here.')
+        return
+    
+    del conversations[channelID]
+    await interaction.response.send_message('Bye bye.')
 
 bot.run(TOKEN)
 
