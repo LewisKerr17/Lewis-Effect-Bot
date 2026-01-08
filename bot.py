@@ -19,6 +19,7 @@ import aiohttp
 from dadjokes import Dadjoke
 import ast
 import ollama
+import threading
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -72,6 +73,85 @@ guessTheNumTarget = None
 donationOpen = False
 donationSessions = {}
 chatOpen = False
+unoTimerOn = False
+
+
+class PlayerHands:
+    def __init__(self, hand_size=7):
+        self.hands = []
+        for _ in range(hand_size):
+            self.hands.append(self.random_card(1))
+
+    def add(self, card):
+        self.hands.append(card)
+
+    def remove(self, card):
+        global deck
+        self.hands.remove(card)
+        deck.append(card)
+
+    def pop(self, index=-1):
+        return self.hands.pop(index) # poopp
+
+    def get(self):
+        return list(self.hands)
+
+    def sizes(self):
+        return len(self.hands)
+
+    def random_card(self, number=1):
+        global _draw_pile
+        try:
+            _draw_pile
+        except NameError:
+            _draw_pile = [card for color in deck for card in color]
+            random.shuffle(_draw_pile)
+
+        drawn = []
+        for i in range(number):
+            if not _draw_pile:
+                _draw_pile = [card for color in deck for card in color]
+                deck.remove(_draw_pile[i])
+                random.shuffle(_draw_pile)
+            drawn.append(_draw_pile.pop())
+
+        return drawn[0] if number == 1 else drawn
+    
+    def check_card(self, card):
+        global current_card
+
+        if card[:1:] == str(current_card[:1:]): #or card[1:] == int(current_card[1:]):
+            print('yeah playable br')
+            return True
+        elif card[1:] in ["reverse", "stop", "four", "+2", "ild", current_card[1:]]:
+            return True
+        else:
+            print('Unable to play this card ngr')
+            return False
+
+    def card_functions(self, card):
+        global order
+        global skip_turn
+        global pickup
+        if card == "rreverse" or card == "breverse" or card == "greverse" or card == "yreverse":
+            order = not order
+        if card == "rstop" or card == "bstop" or card == "gstop" or card == "ystop":
+            skip_turn = True
+        if card == "wild" or card == "+four":
+            new_color = input("Choose a color (r, b, g, y): ")
+            while new_color not in ["r", "b", "g", "y"]:
+                new_color = input("Invalid color. Choose a color (r, b, g, y): ")
+            global current_card
+            current_card = new_color
+        if card == "r+2" or card == "b+2" or card == "g+2" or card == "y+2":
+            pickup = 2
+        if card == "+four":
+            pickup = 4
+
+
+
+
+players = []
 
 def startBus():
     global colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled
@@ -85,13 +165,23 @@ answers = ['yes', 'no', 'definitely', 'that is absolutely true', 'very no', 'abs
 
 @bot.event
 async def on_message(message):
-    global effect, question, question_user_id, measure, suffixOn, timerOn, guessTheNumOn, gptQuestion, messages, rpsOn, diceNumbers, dice, rouletteOn, busOn, colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled, aiOn, totalCount
+    global effect, question, question_user_id, measure, suffixOn, timerOn, guessTheNumOn, gptQuestion, messages, rpsOn, diceNumbers, dice, rouletteOn, busOn, colourGuess, valueGuess, rangeGuess, suitGuess, cardsCalled, aiOn, totalCount, unoTimerOn
 
     channelID = message.channel.id
 
     if message.author.bot:
         return
     
+    if unoOn and message.author.id != bot.user.id:
+        global players
+        while unoTimerOn:
+
+            players.append(message.author.name)
+            await message.channel.send(f'{message.author.id} has been added to the game!')
+
+        if unoTimerOn == False:
+            await message.channel.send(f'Times up! Users added: {str(players)}')
+
     if message.author.id != bot.user.id:
         words = message.content.split()
         if secretWords:
@@ -1111,7 +1201,8 @@ async def motivation(interaction: discord.Interaction):
         try:
             songs = ['C:/Users/lewis/Downloads/motivation.mp3']
             voiceSong = random.choice(songs)
-            source = FFmpegPCMAudio(voiceSong)
+            source = FFmpegPCMAudio(voiceSong, executable="ffmpeg")
+            print("FFmpeg loaded")
             voice_client.play(source, after=lambda e: print(f'Playback doneeeeee: {e}' if e else 'playback finished VBORORO'))
 
             while voice_client.is_playing():
@@ -1289,6 +1380,22 @@ async def endChat(interaction: discord.Interaction):
     
     del conversations[channelID]
     await interaction.response.send_message('Bye bye.')
+
+@bot.tree.command(name='uno', description='Play a game of uno')
+async def uno(interaction: discord.Interaction):
+    global unoOn
+    global unoTimerOn
+    unoOn = True
+    channelID = interaction.channel_id
+    unoTimerOn = True
+
+    await interaction.response.send_message('If you want to play uno, you have the next 20 seconds to send a message to become part of the game.')
+    def unoTimer():
+        global unoTimerOn
+        asyncio.sleep(20)
+        unoTimerOn = False
+
+    unoTimer()
 
 bot.run(TOKEN)
 
