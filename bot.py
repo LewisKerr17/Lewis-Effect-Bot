@@ -1106,6 +1106,47 @@ async def randomVideo(interaction: discord.Interaction):
     caption = f'"{content}"\n- {sender}, {days} days ago'
     await interaction.followup.send(content=caption, file=await video_attachment.to_file())
 
+
+
+#randomimg
+@bot.tree.command(name='random-image', description='find a random image')
+async def randomVideo(interaction: discord.Interaction):
+
+    file_ext = ['.jpg', '.jpeg', '.png', '.gif', '.psd', '.webm']
+
+    channel_id = 856907265420034078
+    channel = interaction.guild.get_channel(channel_id)
+
+    days = random.randint(1, 1818)
+    randomTime = datetime.utcnow() - timedelta(days=days)
+
+    messages = [msg async for msg in channel.history(limit = 300, after=randomTime) if msg.attachments and any(att.filename.endswith(tuple(file_ext)) for att in msg.attachments)]
+    if not messages:
+        await interaction.response.send_message('No messages were found.')
+        return
+    
+    randomMessage = random.choice(messages)
+    sender = randomMessage.author.display_name if hasattr(randomMessage.author, 'display_name') else randomMessage.author.name
+    content = randomMessage.content
+    
+    # Get the attachment (mp4, mov, or webm)
+    video_attachment = next((att for att in randomMessage.attachments if att.filename.endswith(tuple(file_ext))), None)
+
+    attempts = 0
+    while (not content or not video_attachment) and attempts < 5:
+        randomMessage = random.choice(messages)
+        sender = randomMessage.author.display_name if hasattr(randomMessage.author, 'display_name') else randomMessage.author.name
+        content = randomMessage.content
+        video_attachment = next((att for att in randomMessage.attachments if att.filename.endswith(tuple(file_ext))), None)
+        attempts += 1
+
+    await interaction.response.defer()
+    caption = f'"{content}"\n- {sender}, {days} days ago'
+    await interaction.followup.send(content=caption, file=await video_attachment.to_file())
+
+
+
+
 @bot.tree.command(name='set-birthday', description='add your birthday and I will remind you when it is')
 async def birthday(interaction: discord.Interaction, *, prompt: str):
 
